@@ -7,7 +7,7 @@ name = "psql_vcs"
 description = "Postgres version control system"
 version = "0.0.1a0"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 authors = [
   { name = "Beloborod", email = "me@beloborod.ru" }
 ]
@@ -23,8 +23,6 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
