@@ -58,9 +58,9 @@ class URLArgs:
         if self.migration_name is None:
             dsn = PostgresDsn(self.target_database_url) \
                 if isinstance(self.target_database_url, str) else self.target_database_url
-            self.migration_name = dsn.path
+            self.migration_name = dsn.path.lstrip('/')
 
-        if self.target_database_url is str:
+        if type(self.target_database_url) is str:
             self.target_database_url = PostgresDsn(self.target_database_url)
 
         self.migrations_test_database_url = PostgresDsn(str(self.target_database_url).replace(
