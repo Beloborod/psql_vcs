@@ -8,11 +8,16 @@ permissions:
   contents: read
 
 jobs:
-  build_and_tests:
+  tests:
     uses: ./.github/workflows/tests.yml
 
+  build:
+    uses: ./.github/workflows/build_python_package.yml
+    with:
+      python-version: '3.13'
+
   publish:
-    needs: build_and_tests
+    needs: [tests, build]
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -22,7 +27,7 @@ jobs:
       - name: Download distributions
         uses: actions/download-artifact@v8
         with:
-          name: python-package-distributions
+          name: python-package-3.13
           path: dist/
 
       - name: Publish to PyPI
