@@ -49,7 +49,7 @@ class PostgresMigrator:
                 password=args.target_server_password,
                 path=args.target_database
             )
-            self.target_main_dns_obj = PostgresDsn.build(
+            self.target_main_dsn_obj = PostgresDsn.build(
                 scheme="postgresql",
                 host=args.target_server_host,
                 port=args.target_server_port,
@@ -71,7 +71,7 @@ class PostgresMigrator:
 
         self.migration_name = args.migration_name
 
-        main_migrations_requester = PostgresRequester(self.target_main_dns_obj)
+        main_migrations_requester = PostgresRequester(self.target_main_dsn_obj)
         with main_migrations_requester.get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
@@ -303,7 +303,7 @@ class PostgresMigrator:
         return self._generate_map(start_version, end_version)
 
     def migrate_to_last_version(self) -> None:
-        main_target_requester = PostgresRequester(self.target_main_dns_obj)
+        main_target_requester = PostgresRequester(self.target_main_dsn_obj)
         with main_target_requester.get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
