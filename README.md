@@ -94,3 +94,27 @@ If you don't define specific links, default values are used according to the fol
 
 Additionally, each connection argument class has a migration_name argument: by default, the unique "key" linking a migration chain is determined by the name of the database for which these migrations are compiled.
 However, if you plan to use migrations with a single schema on multiple servers containing databases with different names but the same schema, you can define a tag for such a migration chain.
+
+# Create migrations
+To create a migration, use the create_migraton method.
+```python
+from psql_vcs import PostgresMigrator, URLArgs
+
+migrator = PostgresMigrator(URLArgs("..."))
+
+migrator.create_migration()
+```
+If this is the first method call for the selected database/tag (the migration_name argument), a "zero" file will be created, containing code for creating the current database from scratch.
+Essentially, the only difference is that the current migration file will be called when creating the database (if no database exists when running migrations) and will serve as the primary one for the correct operation of subsequent migrations.
+
+# Make migrations
+To migrate to the latest version, use the migrate_to_last_version method.
+```python
+from psql_vcs import PostgresMigrator, URLArgs
+
+migrator = PostgresMigrator(URLArgs("..."))
+
+migrator.migrate_to_last_version()
+```
+The method will compare the current target_base schema with the schemas stored in the migration list. If migration_name is passed, only the corresponding migrations will be compared.
+The corresponding SQL commands will then be executed to bring the database up to date.
