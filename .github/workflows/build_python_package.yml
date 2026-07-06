@@ -1,0 +1,46 @@
+name: Build Python Package
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: 'Python version to use for building'
+        required: false
+        type: string
+        default: '3.13'
+    outputs:
+      artifact-name:
+        description: 'Name of the uploaded artifact'
+        value: ${{ jobs.build.outputs.artifact-name }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      artifact-name: ${{ steps.set-artifact-name.outputs.name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+
+      - name: Build package
+        run: python -m build
+
+      - name: Set artifact name
+        id: set-artifact-name
+        run: echo "name=python-package-${{ inputs.python-version }}" >> $GITHUB_OUTPUT
+
+      - name: Store distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.set-artifact-name.outputs.name }}
+          path: dist/
