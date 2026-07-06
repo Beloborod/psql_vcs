@@ -20,10 +20,10 @@ jobs:
       artifact-name: ${{ steps.set-artifact-name.outputs.name }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ inputs.python-version }}
 
@@ -40,7 +40,7 @@ jobs:
         run: echo "name=python-package-${{ inputs.python-version }}" >> $GITHUB_OUTPUT
 
       - name: Store distribution packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v8
         with:
           name: ${{ steps.set-artifact-name.outputs.name }}
           path: dist/
