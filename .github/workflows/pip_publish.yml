@@ -8,16 +8,11 @@ permissions:
   contents: read
 
 jobs:
-  tests:
+  build_and_tests:
     uses: ./.github/workflows/tests.yml
 
-  build:
-    uses: ./.github/workflows/build_python_package.yml
-    with:
-      python-version: '3.13'
-
   publish:
-    needs: [tests, build]
+    needs: build_and_tests
     runs-on: ubuntu-latest
     environment: release
     permissions:
