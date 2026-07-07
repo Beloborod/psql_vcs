@@ -444,6 +444,7 @@ class PostgresMigrator:
                         """
                         INSERT INTO migrations.schemas (id, name, step, schema, sql_request, created_at)
                             VALUES (%s, %s, %s, %s, %s, %s)
+                            ON CONFLICT DO NOTHING
                         """, (schema['id'], schema['name'], schema['step'], Jsonb(schema['schema']),
                               schema['sql_request'], schema['created_at'])
                     )
