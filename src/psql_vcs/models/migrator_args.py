@@ -2,11 +2,10 @@
 databases."""
 
 from ipaddress import IPv4Address
-from typing import Any
-from pydantic import PostgresDsn, BaseModel, field_validator, ValidationError
+from pydantic import PostgresDsn
 
 
-class AuthArgs(BaseModel):
+class AuthArgs:
     def __init__(
         self,
         target_database: str,
@@ -22,8 +21,7 @@ class AuthArgs(BaseModel):
         migration_server_main_database: str | None = None,
         migration_server_migrations_database: str | None = None,
         migration_server_test_database: str | None = None,
-        migration_name: str | None = None,
-        **data: Any,
+        migration_name: str | None = None
     ) -> None:
         """
         Describe Authorize arguments to connect
@@ -80,15 +78,15 @@ class AuthArgs(BaseModel):
         :param migration_name: Tag to specify grouped chain of migrations
         :type migration_name: str | None = None
         """
-        super().__init__(**data)
-
         self.target_database = target_database
-        self._target_server_host = target_server_host
+        self._target_server_host = self._validate_host(target_server_host)
         self.target_server_port = target_server_port
         self.target_server_username = target_server_username
         self.target_server_password = target_server_password
         self._target_server_main_database = target_server_main_database
-        self._migration_server_host = migration_server_host
+        self._migration_server_host = self._validate_host(
+            migration_server_host
+        )
         self._migration_server_port = migration_server_port
         self._migration_server_username = migration_server_username
         self._migration_server_password = migration_server_password
@@ -99,12 +97,8 @@ class AuthArgs(BaseModel):
         self._migration_server_test_database = migration_server_test_database
         self._migration_name = migration_name
 
-    @field_validator(
-        "_target_server_host",
-        "_migration_server_host",
-    )
-    @classmethod
-    def _validate_host(cls, v: str | IPv4Address) -> str:
+    @staticmethod
+    def _validate_host(v: str | IPv4Address) -> str:
         if isinstance(v, str):
             IPv4Address(v)
         return v.__str__()
@@ -187,7 +181,7 @@ class AuthArgs(BaseModel):
         return f"<AuthArgs {id(self)}>"
 
 
-class URLArgs(BaseModel):
+class URLArgs:
     def __init__(
         self,
         target_database_url: str,
@@ -196,7 +190,6 @@ class URLArgs(BaseModel):
         migration_server_test_database: str | None = None,
         target_server_main_database_url: str | None = None,
         migration_name: str | None = None,
-        **data: Any,
     ) -> None:
         """
         Describe URL arguments to connect
@@ -225,25 +218,24 @@ class URLArgs(BaseModel):
         :param migration_name: Tag to specify grouped chain of migrations
         :type migration_name: str | None = None
         """
-        super().__init__(**data)
-        self._target_database_url = target_database_url
-        self._migrations_database_url = migrations_database_url
-        self._migrations_main_database_url = migrations_main_database_url
+        self._target_database_url = self._validate_pg_url(target_database_url)
+        self._migrations_database_url = self._validate_pg_url(
+            migrations_database_url
+        ) if migrations_database_url else None
+        self._migrations_main_database_url = self._validate_pg_url(
+            migrations_main_database_url
+        ) if migrations_main_database_url else None
         self._migration_server_test_database = migration_server_test_database
-        self._target_server_main_database_url = target_server_main_database_url
+        self._target_server_main_database_url = self._validate_pg_url(
+            target_server_main_database_url
+        ) if target_server_main_database_url else None
         self._migration_name = migration_name
 
-    @field_validator(
-        "_target_database_url",
-        "_migrations_database_url",
-        "_migrations_main_database_url",
-        "_target_server_test_database",
-    )
-    @classmethod
-    def _validate_pg_url(cls, v: str) -> str:
+    @staticmethod
+    def _validate_pg_url(v: str) -> str:
         dsn = PostgresDsn(v)
         if dsn.path is None:
-            raise ValidationError("Database name is required")
+            raise RuntimeError("Database name is required")
         return v
 
     @property
@@ -270,7 +262,7 @@ class URLArgs(BaseModel):
     def target_database(self) -> str:
         path = self.dsn_target_database.path
         if path is None:
-            raise ValidationError("Database name is required")
+            raise RuntimeError("Database name is required")
         return path
 
     @property

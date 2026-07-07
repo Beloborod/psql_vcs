@@ -131,19 +131,18 @@ class PostgresMigrator:
             with connection.cursor() as cursor:
                 cursor.execute("""CREATE SCHEMA IF NOT EXISTS
                                migrations;""")
-                cursor.execute("""CREATE EXTENSION IF NOT EXISTS "uuid-
-                               ossp";""")
-                cursor.execute("""CREATE TABLE IF NOT EXISTS
-                               migrations.schemas ( id UUID PRIMARY KEY
-                               DEFAULT uuid_generate_v4(), name
-                               CHARACTER VARYING (40) NOT NULL, step
-                               SMALLINT NOT NULL, schema JSONB NOT NULL
-                               UNIQUE, sql_request CHARACTER VARYING NOT
-                               NULL, created_at TIMESTAMPTZ DEFAULT NOW.
-
-                               (
-                               )
-                                   );
+                cursor.execute("""
+                               CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+                               """)
+                cursor.execute("""CREATE TABLE IF NOT EXISTS migrations.schemas
+                (
+                    id UUID PRIMARY KEY
+                    DEFAULT uuid_generate_v4(),
+                    name CHARACTER VARYING (40) NOT NULL,
+                    step SMALLINT NOT NULL, schema JSONB NOT NULL UNIQUE,
+                    sql_request CHARACTER VARYING NOT NULL,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                );
                                """)
 
     def _extract_schema(self) -> dict:
@@ -164,13 +163,18 @@ class PostgresMigrator:
                                    character_maximum_length,
                                    numeric_precision, numeric_scale,
                                    datetime_precision, is_nullable,
-                                   column_default, ordinal_position FROM
-                                   information_schema.columns WHERE
-                                   table_schema NOT IN ('pg_catalog',
-                                   'information_schema') AND table_name
-                                   NOT LIKE 'pg_%' ORDER BY
-                                   table_schema, table_name,
-                                   ordinal_position.""")
+                                   column_default, ordinal_position 
+                                      FROM information_schema.columns 
+                                      WHERE table_schema
+                                          NOT IN (
+                                                  'pg_catalog',
+                                                  'information_schema'
+                                                ) 
+                                        AND table_name NOT LIKE 'pg_%'
+                                      ORDER BY 
+                                          table_schema,
+                                          table_name,
+                                          ordinal_position;""")
                     tables = defaultdict(list)
                     for (
                         sch,
@@ -205,11 +209,17 @@ class PostgresMigrator:
                     schema["tables"] = dict(tables)
 
                     cursor.execute("""SELECT schemaname, tablename,
-                                   indexname, indexdef FROM pg_indexes
-                                   WHERE schemaname NOT IN
-                                   ('pg_catalog', 'information_schema')
-                                   ORDER BY schemaname, tablename,
-                                   indexname.""")
+                                   indexname, indexdef 
+                                      FROM pg_indexes
+                                      WHERE schemaname NOT IN 
+                                            (
+                                             'pg_catalog',
+                                             'information_schema'
+                                                )
+                                   ORDER BY 
+                                       schemaname,
+                                       tablename,
+                                       indexname;""")
                     for sch, tbl, idx_name, idx_def in cursor.fetchall():
                         clean_def = " ".join(idx_def.split()).replace(
                             "public.", ""
@@ -243,7 +253,7 @@ class PostgresMigrator:
                             AND tc.table_schema NOT IN
                                 ('pg_catalog', 'information_schema')
                         ORDER BY tc.table_schema, tc.table_name,
-                                 tc.constraint_name, kcu.ordinal_position
+                                 tc.constraint_name, kcu.ordinal_position;
                     """)
                     fks: defaultdict[str, ForeignKeyInfo] = defaultdict(
                         ForeignKeyInfo
@@ -428,7 +438,7 @@ class PostgresMigrator:
                     cursor.execute(
                         """
                         SELECT MAX(step) as max_step FROM migrations.schemas
-                            WHERE name = %s
+                            WHERE name = %s;
                         """,
                         (self.migration_name,),
                     )
@@ -513,7 +523,7 @@ class PostgresMigrator:
                         FROM migrations.schemas
                         WHERE name = %s
                           AND step = %s
-                    )
+                    );
                     """,
                     (self.migration_name, 0),
                 )
@@ -601,7 +611,7 @@ class PostgresMigrator:
         migrations_requester = PostgresRequester(self.migrations_dsn_obj)
         with migrations_requester.get_connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
-                cursor.execute("""SELECT * FROM migrations.schemas.""")
+                cursor.execute("""SELECT * FROM migrations.schemas;""")
                 all_schemas = cursor.fetchall()
         with open(file, "wb") as f:
             dump(all_schemas, f)
@@ -621,10 +631,10 @@ class PostgresMigrator:
             with connection.cursor(row_factory=dict_row) as cursor:
                 for schema in data:
                     cursor.execute(
-                        """INSERT INTO migrations.schemas (id, name,
-                        step, schema, sql_request, created_at) VALUES
-                        (%s, %s, %s, %s, %s, %s) ON CONFLICT DO
-                        NOTHING.""",
+                        """INSERT INTO migrations.schemas
+                           (id, name, step, schema, sql_request, created_at)
+                           VALUES (%s, %s, %s, %s, %s, %s)
+                               ON CONFLICT DO NOTHING""",
                         (
                             schema["id"],
                             schema["name"],
