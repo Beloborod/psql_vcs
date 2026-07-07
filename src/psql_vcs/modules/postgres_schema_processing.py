@@ -117,9 +117,7 @@ class PostgresMigrator:
                     raise PsycopgError("SQL request error")
                 if not exists:
                     cursor.execute(
-                        sql.SQL(\
-                                """CREATE DATABASE {};"""
-                               ).format(
+                        sql.SQL("""CREATE DATABASE {};""").format(
                             sql.Identifier(
                                 self._get_db_name(
                                     self.migrations_dsn_obj
@@ -131,15 +129,11 @@ class PostgresMigrator:
         requester = PostgresRequester(self.migrations_dsn_obj)
         with requester.get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute(
-                               """CREATE SCHEMA IF NOT EXISTS
-                               migrations;"""
-                       )
+                cursor.execute("""CREATE SCHEMA IF NOT EXISTS
+                               migrations;""")
                 cursor.execute("""CREATE EXTENSION IF NOT EXISTS "uuid-
-                               ossp";"""
-                       )
-                cursor.execute(
-                               """CREATE TABLE IF NOT EXISTS
+                               ossp";""")
+                cursor.execute("""CREATE TABLE IF NOT EXISTS
                                migrations.schemas ( id UUID PRIMARY KEY
                                DEFAULT uuid_generate_v4(), name
                                CHARACTER VARYING (40) NOT NULL, step
@@ -150,9 +144,7 @@ class PostgresMigrator:
                                (
                                )
                                    );
-                               """
-
-                       )
+                               """)
 
     def _extract_schema(self) -> dict:
         """Extract schema in specific format from target database.
@@ -178,8 +170,7 @@ class PostgresMigrator:
                                    'information_schema') AND table_name
                                    NOT LIKE 'pg_%' ORDER BY
                                    table_schema, table_name,
-                                   ordinal_position."""
-                       )
+                                   ordinal_position.""")
                     tables = defaultdict(list)
                     for (
                         sch,
@@ -218,8 +209,7 @@ class PostgresMigrator:
                                    WHERE schemaname NOT IN
                                    ('pg_catalog', 'information_schema')
                                    ORDER BY schemaname, tablename,
-                                   indexname."""
-                       )
+                                   indexname.""")
                     for sch, tbl, idx_name, idx_def in cursor.fetchall():
                         clean_def = " ".join(idx_def.split()).replace(
                             "public.", ""
@@ -478,9 +468,7 @@ class PostgresMigrator:
                             f"find initial schema"
                         )
                     cursor.execute(
-                        sql.SQL(
-                                """CREATE DATABASE {};"""
-                               ).format(
+                        sql.SQL("""CREATE DATABASE {};""").format(
                             sql.Identifier(
                                 self._get_db_name(self.target_dsn_obj).lstrip(
                                     "/"
@@ -550,18 +538,14 @@ class PostgresMigrator:
                     (self._get_db_name(self.test_dsn_obj).lstrip("/"),),
                 )
                 cursor.execute(
-                    sql.SQL(
-                            """DROP DATABASE IF EXISTS {};"""
-                           ).format(
+                    sql.SQL("""DROP DATABASE IF EXISTS {};""").format(
                         sql.Identifier(
                             self._get_db_name(self.test_dsn_obj).lstrip("/")
                         )
                     )
                 )
                 cursor.execute(
-                    sql.SQL(
-                            """CREATE DATABASE {};"""
-                           ).format(
+                    sql.SQL("""CREATE DATABASE {};""").format(
                         sql.Identifier(
                             self._get_db_name(self.test_dsn_obj).lstrip("/")
                         )
@@ -599,9 +583,7 @@ class PostgresMigrator:
                     (self._get_db_name(self.test_dsn_obj).lstrip("/"),),
                 )
                 cursor.execute(
-                    sql.SQL(
-                            """DROP DATABASE IF EXISTS {};"""
-                           ).format(
+                    sql.SQL("""DROP DATABASE IF EXISTS {};""").format(
                         sql.Identifier(
                             self._get_db_name(self.test_dsn_obj).lstrip("/")
                         )
@@ -619,9 +601,7 @@ class PostgresMigrator:
         migrations_requester = PostgresRequester(self.migrations_dsn_obj)
         with migrations_requester.get_connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
-                cursor.execute(
-                               """SELECT * FROM migrations.schemas."""
-                       )
+                cursor.execute("""SELECT * FROM migrations.schemas.""")
                 all_schemas = cursor.fetchall()
         with open(file, "wb") as f:
             dump(all_schemas, f)
@@ -644,8 +624,7 @@ class PostgresMigrator:
                         """INSERT INTO migrations.schemas (id, name,
                         step, schema, sql_request, created_at) VALUES
                         (%s, %s, %s, %s, %s, %s) ON CONFLICT DO
-                        NOTHING."""
-                           ,
+                        NOTHING.""",
                         (
                             schema["id"],
                             schema["name"],

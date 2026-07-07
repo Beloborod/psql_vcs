@@ -1,5 +1,6 @@
 """Describe shema to proceed migration."""
 
+
 class CurrentSchema:
     def __init__(
         self, name: str, current_version: int, max_version: int
