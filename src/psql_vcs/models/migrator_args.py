@@ -1,4 +1,5 @@
-"""Contains Args classes, used for connect main Migrator class to databases
+"""Contains Args classes, used for connect main Migrator class
+to databases
 """
 
 from ipaddress import IPv4Address
@@ -10,48 +11,57 @@ from dataclasses import dataclass
 class AuthArgs:
     """
     Describe Authorize arguments to connect
-    
+
     :param target_database: Database to get schema or make migrations
     :type target_database: str
-    
+
     :param target_server_host: IP address of server with target database
     :type target_server_host: str | IPv4Address
-    
+
     :param target_server_port: Port of server with target database
     :type target_server_port: int
-    
-    :param target_server_username: Username of server with target database
+
+    :param target_server_username: Username of server with
+    target database
     :type target_server_username: str
-    
-    :param target_server_password: Password of server with target database
+
+    :param target_server_password: Password of server with
+    target database
     :type target_server_password: str
-    
-    :param target_server_main_database: Main database of server with target database to create 
+
+    :param target_server_main_database: Main database of server with
+    target database to create
     :type target_server_main_database: str | None = None
     target database if not exists
 
-    :param migration_server_host: IP address of server with migrations database
+    :param migration_server_host: IP address of server with
+    migrations database
     :type migration_server_host: str | IPv4Address | None = None
 
-    :param migration_server_port: Port of server with migrations database
+    :param migration_server_port: Port of server with
+    migrations database
     :type migration_server_port: int | None = None
 
-    :param migration_server_username: Username of server with migrations database
+    :param migration_server_username: Username of server with
+    migrations database
     :type migration_server_username: str | None = None
 
-    :param migration_server_password: Password of server with migrations database
+    :param migration_server_password: Password of server with
+    migrations database
     :type migration_server_password: str | None = None
 
-    :param migration_server_main_database: Main database of server with migrations database to create
+    :param migration_server_main_database: Main database of server
+    with migrations database to create
     :type migration_server_main_database: str | None = None
     migrations database if not exists
 
-    :param migration_server_migrations_database: Database with migrations
+    :param migration_server_migrations_database: Database
+    with migrations
     :type migration_server_migrations_database: str | None = None
 
-    :param migration_server_test_database: Database to restore migrations chain,
+    :param migration_server_test_database: Database to restore
+    migrations chain to find diff with current target database schemas
     :type migration_server_test_database: str | None = None
-     to find diff with current target database schemas
 
     :param migration_name: Tag to specify grouped chain of migrations
     :type migration_name: str | None = None
@@ -91,7 +101,8 @@ class AuthArgs:
         if self.migration_server_main_database is None:
             self.migration_server_main_database = 'postgres'
         if self.migration_server_migrations_database is None:
-            self.migration_server_migrations_database = 'psql_vcs_migrations_db'
+            self.migration_server_migrations_database = \
+                'psql_vcs_migrations_db'
         if self.migration_server_test_database is None:
             self.migration_server_test_database = 'psql_vcs_test_db'
         if self.target_server_main_database is None:
@@ -112,23 +123,28 @@ class URLArgs:
     """
     Describe URL arguments to connect
 
-    :param target_database_url: Database url to get schema or make migrations
+    :param target_database_url: Database url to get schema or
+    make migrations
     :type target_database_url: str | PostgresDsn
 
-    :param migrations_database_url: Database url for database with migrations
+    :param migrations_database_url: Database url for database
+    with migrations
     :type migrations_database_url: str | PostgresDsn | None = None
 
-    :param migrations_main_database_url: Main database url of server with migrations database to create
+    :param migrations_main_database_url: Main database url of server
+    with migrations database to create
     :type migrations_main_database_url: str | PostgresDsn | None = None
      migrations database if not exists
 
-    :param migration_server_test_database: Database url to restore migrations chain,
+    :param migration_server_test_database: Database url to  restore
+    migrations chain, to find diff with current target database schemas
     :type migration_server_test_database: str | None = None
-     to find diff with current target database schemas
 
-    :param target_server_main_database_url: Main database url of server with target database to create
-    :type target_server_main_database_url: str | PostgresDsn | None = None
-    target database if not exists
+    :param target_server_main_database_url: Main database url of server
+    with target database to create target database if not exists
+    :type target_server_main_database_url: str | PostgresDsn
+        | None = None
+
 
     :param migration_name: Tag to specify grouped chain of migrations
     :type migration_name: str | None = None
@@ -148,25 +164,40 @@ class URLArgs:
         """
         if self.migration_name is None:
             dsn = PostgresDsn(self.target_database_url) \
-                if isinstance(self.target_database_url, str) else self.target_database_url
+                if isinstance(self.target_database_url, str) \
+                else self.target_database_url
             self.migration_name = dsn.path.lstrip('/')
 
         if type(self.target_database_url) is str:
-            self.target_database_url = PostgresDsn(self.target_database_url)
+            self.target_database_url = PostgresDsn(
+                self.target_database_url
+            )
 
-        self.migrations_test_database_url = PostgresDsn(str(self.target_database_url).replace(
-            self.target_database_url.path, '/psql_vcs_test_db' if self.migration_server_test_database is None else
-            '/' + self.migration_server_test_database))
+        self.migrations_test_database_url = PostgresDsn(
+            str(self.target_database_url).replace(
+                self.target_database_url.path, '/psql_vcs_test_db'
+                if self.migration_server_test_database is None
+                else '/' + self.migration_server_test_database))
 
         if self.migrations_database_url is None:
-            self.migrations_database_url = PostgresDsn(str(self.target_database_url).replace(
-                self.target_database_url.path, '/psql_vcs_migrations_db'))
+            self.migrations_database_url = PostgresDsn(
+                str(self.target_database_url).replace(
+                    self.target_database_url.path,
+                    '/psql_vcs_migrations_db'
+                )
+            )
         if self.migrations_main_database_url is None:
-            self.migrations_main_database_url = PostgresDsn(str(self.target_database_url).replace(
-                self.target_database_url.path, '/postgres'))
+            self.migrations_main_database_url = PostgresDsn(
+                str(self.target_database_url).replace(
+                    self.target_database_url.path, '/postgres'
+                )
+            )
         if self.target_server_main_database_url is None:
-            self.target_server_main_database_url = PostgresDsn(str(self.target_database_url).replace(
-                self.target_database_url.path, '/postgres'))
+            self.target_server_main_database_url = PostgresDsn(
+                str(self.target_database_url).replace(
+                    self.target_database_url.path, '/postgres'
+                )
+            )
 
     def __repr__(self) -> str:
         """

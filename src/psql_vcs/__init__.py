@@ -1,4 +1,5 @@
-"""Core imports, define PostgresMigrator and needed types of arguments - AuthArgs and URLArgs.
+"""Core imports, define PostgresMigrator and needed types of arguments
+ - AuthArgs and URLArgs.
 Also, setup logger.
 """
 

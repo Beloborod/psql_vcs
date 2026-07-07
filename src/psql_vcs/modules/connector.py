@@ -9,7 +9,8 @@ from pydantic import PostgresDsn
 class PostgresRequester:
     def __init__(self, database_url: str | PostgresDsn) -> None:
         """
-        Initializes PostgresRequester with safely close all connections and pools before exit of execution
+        Initializes PostgresRequester with safely close all connections
+        and pools before exit of execution
 
         :param database_url: URL string to connect to Postgres database
         :type database_url: str | PostgresDsn
@@ -23,10 +24,16 @@ class PostgresRequester:
             with connect(self._dsn, connect_timeout=5) as conn:
                 conn.execute("SELECT 1")
         except OperationalError as e:
-            raise RuntimeError(f"Failed to connect to database: {e}") from None
+            raise RuntimeError(
+                f"Failed to connect to database: {e}"
+            ) from None
 
-        self._pool = ConnectionPool(self._dsn, min_size=2, max_size=10, max_idle=300, max_lifetime=3600)
-        self._no_trigger_pool = ConnectionPool(self._dsn, min_size=1, max_size=4, max_idle=300, max_lifetime=3600)
+        self._pool = ConnectionPool(self._dsn, min_size=2, max_size=10,
+                                    max_idle=300, max_lifetime=3600)
+        self._no_trigger_pool = ConnectionPool(
+            self._dsn, min_size=1, max_size=4,
+            max_idle=300, max_lifetime=3600
+        )
 
     def __del__(self) -> None:
         """
@@ -34,8 +41,10 @@ class PostgresRequester:
 
         :rtype: None
         """
-        if hasattr(self, '_pool'): self._pool.close()
-        if hasattr(self, '_no_trigger_pool'): self._no_trigger_pool.close()
+        if hasattr(self, '_pool'):
+            self._pool.close()
+        if hasattr(self, '_no_trigger_pool'):
+            self._no_trigger_pool.close()
 
     def __repr__(self) -> str:
         """
@@ -44,7 +53,9 @@ class PostgresRequester:
         :return: Representation of class
         :rtype: str
         """
-        return f"<PostgresRequester host={self._dsn.split('@')[-1].split('/')[0]} password=***>"
+        return (f"<PostgresRequester "
+                f"host={self._dsn.split('@')[-1].split('/')[0]} "
+                f"password=***>")
 
     def get_connection(self) -> Connection:
         """

@@ -69,16 +69,32 @@ class PostgresMigrator:
                 path=args.target_server_main_database
             )
         else:
-            self.main_migrations_dsn_obj = PostgresDsn(args.migrations_main_database_url) \
-                if isinstance(args.migrations_main_database_url, str) else args.migrations_main_database_url
-            self.migrations_dsn_obj = PostgresDsn(args.migrations_database_url) \
-                if isinstance(args.migrations_database_url, str) else args.migrations_database_url
-            self.test_dsn_obj = PostgresDsn(args.migrations_test_database_url) \
-                if isinstance(args.migrations_test_database_url, str) else args.migrations_test_database_url
-            self.target_dsn_obj = PostgresDsn(args.target_database_url) \
-                if isinstance(args.target_database_url, str) else args.target_database_url
-            self.target_main_dsn_obj = PostgresDsn(args.target_server_main_database_url) \
-                if isinstance(args.target_server_main_database_url, str) else args.target_server_main_database_url
+            self.main_migrations_dsn_obj = PostgresDsn(
+                args.migrations_main_database_url
+            ) \
+                if isinstance(args.migrations_main_database_url, str)\
+                else args.migrations_main_database_url
+            self.migrations_dsn_obj = PostgresDsn(
+                args.migrations_database_url
+            ) \
+                if isinstance(args.migrations_database_url, str)\
+                else args.migrations_database_url
+            self.test_dsn_obj = PostgresDsn(
+                args.migrations_test_database_url
+            ) \
+                if isinstance(args.migrations_test_database_url, str)\
+                else args.migrations_test_database_url
+            self.target_dsn_obj = PostgresDsn(
+                args.target_database_url
+            ) \
+                if isinstance(args.target_database_url, str)\
+                else args.target_database_url
+            self.target_main_dsn_obj = PostgresDsn(
+                args.target_server_main_database_url
+            ) \
+                if isinstance(args.target_server_main_database_url,
+                              str)\
+                else args.target_server_main_database_url
 
         self.migration_name = args.migration_name
         self.__create_migrations_db()
@@ -89,7 +105,9 @@ class PostgresMigrator:
 
         :rtype: None
         """
-        main_migrations_requester = PostgresRequester(self.main_migrations_dsn_obj)
+        main_migrations_requester = PostgresRequester(
+            self.main_migrations_dsn_obj
+        )
         with main_migrations_requester.get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
@@ -108,7 +126,9 @@ class PostgresMigrator:
                             """
                             CREATE DATABASE {};
                             """
-                        ).format(sql.Identifier(self.migrations_dsn_obj.path.lstrip('/')))
+                        ).format(sql.Identifier(
+                            self.migrations_dsn_obj.path.lstrip('/')
+                        ))
                     )
 
         requester = PostgresRequester(self.migrations_dsn_obj)
@@ -155,17 +175,22 @@ class PostgresMigrator:
             with requester.get_connection() as connection:
                 with connection.cursor() as cursor:
                     cursor.execute("""
-                        SELECT table_schema, table_name, column_name, data_type, character_maximum_length, 
-                        numeric_precision, numeric_scale, datetime_precision,
-                               is_nullable, column_default, ordinal_position
+                        SELECT table_schema, table_name, column_name,
+                               data_type, character_maximum_length,
+                               numeric_precision, numeric_scale,
+                               datetime_precision, is_nullable,
+                               column_default, ordinal_position
                         FROM information_schema.columns
-                        WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
+                        WHERE table_schema NOT IN
+                              ('pg_catalog', 'information_schema')
                           AND table_name NOT LIKE 'pg_%'
-                        ORDER BY table_schema, table_name, ordinal_position
+                        ORDER BY table_schema, table_name,
+                                 ordinal_position
                     """)
                     tables = defaultdict(list)
-                    for sch, tbl, col, dtype, max_char, precis, scale, date_precis, \
-                            nullable, default, pos in cursor.fetchall():
+                    for sch, tbl, col, dtype, max_char, precis, scale, \
+                            date_precis, nullable, default, pos \
+                            in cursor.fetchall():
                         tables[f"{sch}.{tbl}"].append({
                             "name": col,
                             "type": dtype.strip(),
@@ -173,7 +198,8 @@ class PostgresMigrator:
                             "max_char": max_char if max_char else None,
                             "precision": precis if precis else None,
                             "scale": scale if scale else None,
-                            "date_precision": date_precis if date_precis else None,
+                            "date_precision": date_precis
+                            if date_precis else None,
                             "default": default.strip() if default else None,
                             "position": pos
                         })
@@ -182,11 +208,13 @@ class PostgresMigrator:
                     cursor.execute("""
                         SELECT schemaname, tablename, indexname, indexdef
                         FROM pg_indexes
-                        WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
+                        WHERE schemaname NOT IN
+                              ('pg_catalog', 'information_schema')
                         ORDER BY schemaname, tablename, indexname
                     """)
                     for sch, tbl, idx_name, idx_def in cursor.fetchall():
-                        clean_def = " ".join(idx_def.split()).replace("public.", "")
+                        clean_def = " ".join(idx_def.split()
+                                             ).replace("public.", "")
                         schema["indexes"].append({
                             "table": f"{sch}.{tbl}",
                             "name": idx_name,
@@ -211,11 +239,15 @@ class PostgresMigrator:
                         JOIN pg_constraint pc
                           ON pc.conname = tc.constraint_name
                         WHERE tc.constraint_type = 'FOREIGN KEY'
-                            AND tc.table_schema NOT IN ('pg_catalog', 'information_schema')
-                        ORDER BY tc.table_schema, tc.table_name, tc.constraint_name, kcu.ordinal_position
+                            AND tc.table_schema NOT IN
+                                ('pg_catalog', 'information_schema')
+                        ORDER BY tc.table_schema, tc.table_name,
+                                 tc.constraint_name, kcu.ordinal_position
                     """)
-                    fks: defaultdict[str, dict[str, list | str | None]] = defaultdict(
-                        lambda: {"columns": [], "ref_table": None, "ref_columns": [], "del_upd": None})
+                    fks: defaultdict[str, dict[str, list | str | None]] = \
+                        defaultdict(lambda:
+                                    {"columns": [], "ref_table": None,
+                                     "ref_columns": [], "del_upd": None})
                     for row in cursor.fetchall():
                         key = f"{row[0]}.{row[1]}.{row[2]}"
                         fks[key]["columns"].append(row[3])
@@ -227,7 +259,9 @@ class PostgresMigrator:
                         v["ref_columns"].sort()
 
                     schema["foreign_keys"] = [
-                        {"constraint_name": k, **v} for k, v in sorted(fks.items())
+                        {"constraint_name": k, **v} for k, v in sorted(
+                            fks.items()
+                        )
                     ]
                     schema["foreign_keys"] = [
                         {"constraint_name": k, **v} for k, v in fks.items()
@@ -239,11 +273,13 @@ class PostgresMigrator:
 
     def _save_schema_diff(self, schema: dict, sql_request: str) -> None:
         """
-        Add to migrations database new chain link with difference between last available shema and new version
+        Add to migrations database new chain link with difference
+        between last available shema and new version
 
         :param schema: Database schema in specific format
         :type schema: dict
-        :param sql_request: SQL script to make new schemas version from last available in migrations chain
+        :param sql_request: SQL script to make new schemas version from
+        last available in migrations chain
         :type sql_request: str
         :rtype: None
         """
@@ -252,7 +288,8 @@ class PostgresMigrator:
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    INSERT INTO migrations.schemas (name, step, schema, sql_request)
+                    INSERT INTO migrations.schemas
+                        (name, step, schema, sql_request)
                         VALUES
                             (
                                 %s,
@@ -264,17 +301,22 @@ class PostgresMigrator:
                                 %s,
                                 %s
                             );
-                    """, (self.migration_name, self.migration_name, Jsonb(schema), sql_request)
+                    """,
+                    (self.migration_name, self.migration_name,
+                     Jsonb(schema), sql_request)
                 )
 
     def _schema_compare(self, schema: dict) -> CurrentSchema:
         """
-        Compare current schema of target database with available in migrations database
-        Return name of chain group, current version in chain and max available version
+        Compare current schema of target database with available
+        in migrations database
+        Return name of chain group, current version in chain and
+        max available version
 
         :param schema: Current schema in specific format
         :type schema: dict
-        :return: Name of chain group, current version in chain and max available version
+        :return: Name of chain group, current version in chain and
+        max available version
         :rtype: CurrentSchema
         """
         requester = PostgresRequester(self.migrations_dsn_obj)
@@ -297,11 +339,14 @@ class PostgresMigrator:
                     """, (search_result['name'],)
                 )
                 max_version = cursor.fetchone()['max_version']
-                return CurrentSchema(search_result['name'], search_result['step'], max_version)
+                return CurrentSchema(search_result['name'],
+                                     search_result['step'], max_version)
 
-    def _generate_map(self, current_version: int, max_version: int) -> list[str]:
+    def _generate_map(self, current_version: int,
+                      max_version: int) -> list[str]:
         """
-        Generate migration map - list of SQL scripts to migrate database between current and max version
+        Generate migration map - list of SQL scripts to migrate
+        database between current and max version
 
         :param current_version: Current database version
         :type current_version: int
@@ -322,12 +367,19 @@ class PostgresMigrator:
                           AND step > %s
                             AND step <= %s
                         ORDER BY step;
-                        """, (self.migration_name, current_version, max_version)
+                        """,
+                        (self.migration_name, current_version, max_version)
                     )
                     search_result = cursor.fetchall()
                     if len(search_result) == 0:
-                        raise RuntimeError("Can't find schemas for %s, started on %s and end on %s versions".format(
-                            self.migration_name, current_version, max_version))
+                        raise RuntimeError(
+                            "Can't find schemas for {}, started on "
+                            "{} and end on {} versions"
+                            .format(
+                                self.migration_name, current_version,
+                                max_version
+                            )
+                        )
                     return [row['sql_request'] for row in search_result]
         else:
             logger.debug(f"Schema version {current_version} is already actual")
@@ -343,15 +395,19 @@ class PostgresMigrator:
         :rtype: list[str]
         """
         current_schema = self._schema_compare(schema)
-        return self._generate_map(current_schema.current_version, current_schema.max_version)
+        return self._generate_map(current_schema.current_version,
+                                  current_schema.max_version)
 
-    def _get_migration_map(self, start_version: int = 1, end_version: int | None = None) -> list[str]:
+    def _get_migration_map(self, start_version: int = 1,
+                           end_version: int | None = None) -> list[str]:
         """
-        Generate migration map for target database, with specified start and end version
+        Generate migration map for target database,
+        with specified start and end version
 
         :param start_version: First version to start migration
         :type start_version: int
-        :param end_version: End version to end migration, use lastest if specified like None
+        :param end_version: End version to end migration,
+        use lastest if specified like None
         :type end_version: int | None
         :return: List of SQL scripts for make migrations
         :rtype: list[str]
@@ -372,7 +428,8 @@ class PostgresMigrator:
 
     def migrate_to_last_version(self) -> None:
         """
-        Make migrations for target database to latest version, create database if not exists
+        Make migrations for target database to latest version,
+        create database if not exists
 
         :rtype: None
         """
@@ -388,22 +445,30 @@ class PostgresMigrator:
                 )
                 a = cursor.fetchone()
                 if a is None:
-                    initial_sql = self._get_migration_map(start_version=-1, end_version=0)
+                    initial_sql = self._get_migration_map(start_version=-1,
+                                                          end_version=0)
                     if not initial_sql:
-                        raise RuntimeError(f"Can't find database for {self.migration_name}, after try to create - can't "
+                        raise RuntimeError(f"Can't find database for "
+                                           f"{self.migration_name}, "
+                                           f"after try to create - can't "
                                            f"find initial schema")
                     cursor.execute(
                         sql.SQL(
                             """
                             CREATE DATABASE {};
                             """
-                        ).format(sql.Identifier(self.target_dsn_obj.path.lstrip('/')))
+                        ).format(sql.Identifier(
+                            self.target_dsn_obj.path.lstrip('/')
+                        ))
                     )
                     target_requester = PostgresRequester(self.target_dsn_obj)
-                    with target_requester.get_connection() as target_connection:
+                    with target_requester.get_connection() \
+                            as target_connection:
                         with target_connection.cursor() as target_cursor:
                             for migration in initial_sql:
-                                target_cursor.execute(cast(LiteralString, migration))
+                                target_cursor.execute(
+                                    cast(LiteralString, migration)
+                                )
 
         schema = self._extract_schema()
         migration_map = self._get_migration_map_by_schema(schema)
@@ -415,9 +480,12 @@ class PostgresMigrator:
 
     def create_migration(self) -> None:
         """
-        Add migration in chain, add tag if specified, or use database name.
-        If no migrations for this chain group exists - create first script to create database, otherwise
-        find difference between last available version in chain and current instance of target database and add it to
+        Add migration in chain, add tag if specified,
+        or use database name.
+        If no migrations for this chain group exists -
+        create first script to create database, otherwise
+        find difference between last available version in chain and
+        current instance of target database and add it to
         migrations database
 
         :rtype: None
@@ -437,7 +505,9 @@ class PostgresMigrator:
                 )
                 exists = cursor.fetchone()[0]
 
-        main_database_requester = PostgresRequester(self.main_migrations_dsn_obj)
+        main_database_requester = PostgresRequester(
+            self.main_migrations_dsn_obj
+        )
         with main_database_requester.get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
@@ -453,14 +523,18 @@ class PostgresMigrator:
                         """
                         DROP DATABASE IF EXISTS {};
                         """
-                    ).format(sql.Identifier(self.test_dsn_obj.path.lstrip('/')))
+                    ).format(sql.Identifier(
+                        self.test_dsn_obj.path.lstrip('/')
+                    ))
                 )
                 cursor.execute(
                     sql.SQL(
                         """
                         CREATE DATABASE {};
                         """
-                    ).format(sql.Identifier(self.test_dsn_obj.path.lstrip('/')))
+                    ).format(sql.Identifier(
+                        self.test_dsn_obj.path.lstrip('/')
+                    ))
                 )
         test_requester = PostgresRequester(self.test_dsn_obj)
 
@@ -472,14 +546,19 @@ class PostgresMigrator:
                         cursor.execute(cast(LiteralString, migration))
 
         diff = (results.db(self.test_dsn_obj.encoded_string()).
-                schemadiff_as_sql(results.db(self.target_dsn_obj.encoded_string())))
+                schemadiff_as_sql(
+            results.db(
+                self.target_dsn_obj.encoded_string()
+            )
+        ))
 
         schema = self._extract_schema()
 
         if diff:
             self._save_schema_diff(schema, diff)
         else:
-            logger.info("No changes made for %s", self.migration_name)
+            logger.info("No changes made for %s",
+                        self.migration_name)
 
         with main_database_requester.get_connection() as connection:
             with connection.cursor() as cursor:
@@ -497,14 +576,17 @@ class PostgresMigrator:
                         DROP
                         DATABASE IF EXISTS {};
                         """
-                    ).format(sql.Identifier(self.test_dsn_obj.path.lstrip('/')))
+                    ).format(sql.Identifier(
+                        self.test_dsn_obj.path.lstrip('/')
+                    ))
                 )
 
     def save_migrations(self, file: str) -> None:
         """
         Save current migrations database to file
 
-        :param file: File name / path with name to save migrations database data
+        :param file: File name / path with name to save
+        migrations database data
         :type file: str
         :rtype: None
         """
@@ -524,7 +606,8 @@ class PostgresMigrator:
         """
         Load migrations database from file to migrations database
 
-        :param file: File name / path with name to load migrations database data
+        :param file: File name / path with name to load
+        migrations database data
         :type file: str
         :rtype: None
         """
@@ -536,9 +619,12 @@ class PostgresMigrator:
                 for schema in data:
                     cursor.execute(
                         """
-                        INSERT INTO migrations.schemas (id, name, step, schema, sql_request, created_at)
+                        INSERT INTO migrations.schemas
+                        (id, name, step, schema, sql_request, created_at)
                             VALUES (%s, %s, %s, %s, %s, %s)
                             ON CONFLICT DO NOTHING
-                        """, (schema['id'], schema['name'], schema['step'], Jsonb(schema['schema']),
-                              schema['sql_request'], schema['created_at'])
+                        """,
+                        (schema['id'], schema['name'], schema['step'],
+                         Jsonb(schema['schema']), schema['sql_request'],
+                         schema['created_at'])
                     )
