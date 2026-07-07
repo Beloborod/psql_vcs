@@ -2,6 +2,8 @@
 """
 
 import logging
+from dataclasses import asdict
+
 from psycopg import Error as PsycopgError
 from psycopg.rows import dict_row
 from psycopg import sql
@@ -14,6 +16,7 @@ from ..models import AuthArgs, URLArgs, CurrentSchema
 from . import PostgresRequester
 from pickle import dump, load
 
+from ..models.shcema_description import ForeignKeyInfo
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +30,16 @@ class PostgresMigrator:
         :type args: AuthArgs | URLArgs
         :rtype: None
         """
+        self.main_migrations_dsn_obj: PostgresDsn
+        self.migrations_dsn_obj: PostgresDsn
+        self.test_dsn_obj: PostgresDsn
+        self.target_dsn_obj: PostgresDsn
+        self.target_main_dsn_obj: PostgresDsn
+
         if isinstance(args, AuthArgs):
             self.main_migrations_dsn_obj = PostgresDsn.build(
                 scheme="postgresql",
-                host=args.migration_server_host,
+                host=args.migration_server_host.__str__(),
                 port=args.migration_server_port,
                 username=args.migration_server_username,
                 password=args.migration_server_password,
@@ -38,7 +47,7 @@ class PostgresMigrator:
             )
             self.migrations_dsn_obj = PostgresDsn.build(
                 scheme="postgresql",
-                host=args.migration_server_host,
+                host=args.migration_server_host.__str__(),
                 port=args.migration_server_port,
                 username=args.migration_server_username,
                 password=args.migration_server_password,
@@ -46,7 +55,7 @@ class PostgresMigrator:
             )
             self.test_dsn_obj = PostgresDsn.build(
                 scheme="postgresql",
-                host=args.migration_server_host,
+                host=args.migration_server_host.__str__(),
                 port=args.migration_server_port,
                 username=args.migration_server_username,
                 password=args.migration_server_password,
@@ -54,7 +63,7 @@ class PostgresMigrator:
             )
             self.target_dsn_obj = PostgresDsn.build(
                 scheme="postgresql",
-                host=args.target_server_host,
+                host=args.target_server_host.__str__(),
                 port=args.target_server_port,
                 username=args.target_server_username,
                 password=args.target_server_password,
@@ -62,42 +71,27 @@ class PostgresMigrator:
             )
             self.target_main_dsn_obj = PostgresDsn.build(
                 scheme="postgresql",
-                host=args.target_server_host,
+                host=args.target_server_host.__str__(),
                 port=args.target_server_port,
                 username=args.target_server_username,
                 password=args.target_server_password,
                 path=args.target_server_main_database
             )
         else:
-            self.main_migrations_dsn_obj = PostgresDsn(
-                args.migrations_main_database_url
-            ) \
-                if isinstance(args.migrations_main_database_url, str)\
-                else args.migrations_main_database_url
-            self.migrations_dsn_obj = PostgresDsn(
-                args.migrations_database_url
-            ) \
-                if isinstance(args.migrations_database_url, str)\
-                else args.migrations_database_url
-            self.test_dsn_obj = PostgresDsn(
-                args.migrations_test_database_url
-            ) \
-                if isinstance(args.migrations_test_database_url, str)\
-                else args.migrations_test_database_url
-            self.target_dsn_obj = PostgresDsn(
-                args.target_database_url
-            ) \
-                if isinstance(args.target_database_url, str)\
-                else args.target_database_url
-            self.target_main_dsn_obj = PostgresDsn(
-                args.target_server_main_database_url
-            ) \
-                if isinstance(args.target_server_main_database_url,
-                              str)\
-                else args.target_server_main_database_url
+            self.main_migrations_dsn_obj = args.dsn_migration_main_database
+            self.migrations_dsn_obj = args.dsn_migrations_database
+            self.test_dsn_obj = args.dsn_migrations_test_database
+            self.target_dsn_obj = args.dsn_target_database
+            self.target_main_dsn_obj = args.dsn_target_main_database
 
         self.migration_name = args.migration_name
         self.__create_migrations_db()
+
+    @staticmethod
+    def _get_db_name(dns_obj: PostgresDsn) -> str:
+        path = dns_obj.path
+        assert path is not None
+        return path
 
     def __create_migrations_db(self) -> None:
         """
@@ -111,15 +105,20 @@ class PostgresMigrator:
         with main_migrations_requester.get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                        """
-                        SELECT EXISTS (
-                                   SELECT 1
-                                   FROM pg_database
-                                   WHERE datname = %s
-                        );
-                        """, (self.migrations_dsn_obj.path.lstrip('/'),)
+                    """
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM pg_database
+                        WHERE datname = %s
+                    );
+                    """,
+                    (self._get_db_name(self.migrations_dsn_obj).lstrip('/'),)
                 )
-                exists = cursor.fetchone()[0]
+                exists = cursor.fetchone()
+                if exists:
+                    exists = exists[0]
+                else:
+                    raise PsycopgError("SQL request error")
                 if not exists:
                     cursor.execute(
                         sql.SQL(
@@ -127,7 +126,9 @@ class PostgresMigrator:
                             CREATE DATABASE {};
                             """
                         ).format(sql.Identifier(
-                            self.migrations_dsn_obj.path.lstrip('/')
+                            self._get_db_name(
+                                self.migrations_dsn_obj
+                            ).lstrip('/')
                         ))
                     )
 
@@ -167,7 +168,7 @@ class PostgresMigrator:
         :return: Schema in specific format
         :rtype: dict
         """
-        schema = {"tables": {}, "indexes": [], "foreign_keys": []}
+        schema: dict = {"tables": {}, "indexes": [], "foreign_keys": []}
 
         requester = PostgresRequester(self.target_dsn_obj)
 
@@ -244,27 +245,25 @@ class PostgresMigrator:
                         ORDER BY tc.table_schema, tc.table_name,
                                  tc.constraint_name, kcu.ordinal_position
                     """)
-                    fks: defaultdict[str, dict[str, list | str | None]] = \
-                        defaultdict(lambda:
-                                    {"columns": [], "ref_table": None,
-                                     "ref_columns": [], "del_upd": None})
+                    fks: defaultdict[str, ForeignKeyInfo] = \
+                        defaultdict(ForeignKeyInfo)
                     for row in cursor.fetchall():
                         key = f"{row[0]}.{row[1]}.{row[2]}"
-                        fks[key]["columns"].append(row[3])
-                        fks[key]["ref_table"] = f"{row[4]}.{row[5]}"
-                        fks[key]["ref_columns"].append(row[6])
-                        fks[key]["del_upd"] = f"{row[7]}.{row[8]}"
+                        fks[key].columns.append(row[3])
+                        fks[key].ref_table = f"{row[4]}.{row[5]}"
+                        fks[key].ref_columns.append(row[6])
+                        fks[key].del_upd = f"{row[7]}.{row[8]}"
                     for v in fks.values():
-                        v["columns"].sort()
-                        v["ref_columns"].sort()
+                        v.columns.sort()
+                        v.ref_columns.sort()
 
                     schema["foreign_keys"] = [
-                        {"constraint_name": k, **v} for k, v in sorted(
-                            fks.items()
-                        )
+                        {"constraint_name": k, **asdict(v)} for k, v
+                        in sorted(fks.items())
                     ]
                     schema["foreign_keys"] = [
-                        {"constraint_name": k, **v} for k, v in fks.items()
+                        {"constraint_name": k, **asdict(v)} for k, v
+                        in fks.items()
                     ]
         except PsycopgError as e:
             raise RuntimeError(f"Connect or request failed: {e}") from None
@@ -338,7 +337,10 @@ class PostgresMigrator:
                         WHERE name = %s;
                     """, (search_result['name'],)
                 )
-                max_version = cursor.fetchone()['max_version']
+                result = cursor.fetchone()
+                if result is None:
+                    raise RuntimeError("Scheme not found")
+                max_version = result['max_version']
                 return CurrentSchema(search_result['name'],
                                      search_result['step'], max_version)
 
@@ -423,6 +425,8 @@ class PostgresMigrator:
                         """, (self.migration_name,)
                     )
                     search_result = cursor.fetchone()
+                    if not search_result:
+                        raise RuntimeError("Schema not found")
                     end_version = search_result['max_step']
         return self._generate_map(start_version, end_version)
 
@@ -437,11 +441,12 @@ class PostgresMigrator:
         with main_target_requester.get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                        """
-                        SELECT 1
-                        FROM pg_database
-                        WHERE datname = %s;
-                        """, (self.target_dsn_obj.path.lstrip('/'),)
+                    """
+                    SELECT 1
+                    FROM pg_database
+                    WHERE datname = %s;
+                    """,
+                    (self._get_db_name(self.target_dsn_obj).lstrip('/'),)
                 )
                 a = cursor.fetchone()
                 if a is None:
@@ -458,7 +463,7 @@ class PostgresMigrator:
                             CREATE DATABASE {};
                             """
                         ).format(sql.Identifier(
-                            self.target_dsn_obj.path.lstrip('/')
+                            self._get_db_name(self.target_dsn_obj).lstrip('/')
                         ))
                     )
                     target_requester = PostgresRequester(self.target_dsn_obj)
@@ -503,7 +508,11 @@ class PostgresMigrator:
                     )
                     """, (self.migration_name, 0)
                 )
-                exists = cursor.fetchone()[0]
+                exists = cursor.fetchone()
+                if exists:
+                    exists = exists[0]
+                else:
+                    raise PsycopgError("SQL request error")
 
         main_database_requester = PostgresRequester(
             self.main_migrations_dsn_obj
@@ -511,12 +520,13 @@ class PostgresMigrator:
         with main_database_requester.get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                        """
-                        SELECT pg_terminate_backend(pid)
-                        FROM pg_stat_activity
-                        WHERE datname = %s
-                          AND pid <> pg_backend_pid();
-                        """, (self.test_dsn_obj.path.lstrip('/'),)
+                    """
+                    SELECT pg_terminate_backend(pid)
+                    FROM pg_stat_activity
+                    WHERE datname = %s
+                      AND pid <> pg_backend_pid();
+                    """,
+                    (self._get_db_name(self.test_dsn_obj).lstrip('/'),)
                 )
                 cursor.execute(
                     sql.SQL(
@@ -524,7 +534,7 @@ class PostgresMigrator:
                         DROP DATABASE IF EXISTS {};
                         """
                     ).format(sql.Identifier(
-                        self.test_dsn_obj.path.lstrip('/')
+                        self._get_db_name(self.test_dsn_obj).lstrip('/')
                     ))
                 )
                 cursor.execute(
@@ -533,7 +543,7 @@ class PostgresMigrator:
                         CREATE DATABASE {};
                         """
                     ).format(sql.Identifier(
-                        self.test_dsn_obj.path.lstrip('/')
+                        self._get_db_name(self.test_dsn_obj).lstrip('/')
                     ))
                 )
         test_requester = PostgresRequester(self.test_dsn_obj)
@@ -563,12 +573,13 @@ class PostgresMigrator:
         with main_database_requester.get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                        """
-                        SELECT pg_terminate_backend(pid)
-                        FROM pg_stat_activity
-                        WHERE datname = %s
-                          AND pid <> pg_backend_pid();
-                        """, (self.test_dsn_obj.path.lstrip('/'),)
+                    """
+                    SELECT pg_terminate_backend(pid)
+                    FROM pg_stat_activity
+                    WHERE datname = %s
+                      AND pid <> pg_backend_pid();
+                    """,
+                    (self._get_db_name(self.test_dsn_obj).lstrip('/'),)
                 )
                 cursor.execute(
                     sql.SQL(
@@ -577,7 +588,7 @@ class PostgresMigrator:
                         DATABASE IF EXISTS {};
                         """
                     ).format(sql.Identifier(
-                        self.test_dsn_obj.path.lstrip('/')
+                        self._get_db_name(self.test_dsn_obj).lstrip('/')
                     ))
                 )
 
