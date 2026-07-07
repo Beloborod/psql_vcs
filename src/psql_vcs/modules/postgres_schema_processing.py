@@ -71,7 +71,7 @@ class PostgresMigrator:
 
         self.migration_name = args.migration_name
 
-        main_migrations_requester = PostgresRequester(self.target_main_dsn_obj)
+        main_migrations_requester = PostgresRequester(self.main_migrations_dsn_obj)
         with main_migrations_requester.get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
@@ -418,3 +418,4 @@ class PostgresMigrator:
                         """
                     ).format(sql.Identifier(self.test_dsn_obj.path.lstrip('/')))
                 )
+
