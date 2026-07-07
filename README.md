@@ -140,5 +140,5 @@ migrator = PostgresMigrator(URLArgs("..."))
 migrator.load_migrations('migrations.pkl')
 ```
 
-> [!INFO]
+> [!NOTE]
 > The load_migrations method, like the migrate_to_last_version method, allows you to call them constantly, for example, when starting a project, to bring the database up to date, and will not raise an exception if migrations have already been restored or the database has already been brought to the latest version.
