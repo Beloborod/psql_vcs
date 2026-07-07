@@ -1,3 +1,6 @@
+"""Core project logic with PostgreSQL schema processing
+"""
+
 import logging
 from psycopg import Error as PsycopgError
 from psycopg.rows import dict_row
@@ -16,7 +19,14 @@ logger = logging.getLogger(__name__)
 
 
 class PostgresMigrator:
-    def __init__(self, args: AuthArgs | URLArgs):
+    def __init__(self, args: AuthArgs | URLArgs) -> None:
+        """
+        Initialize Postgres Migrator, create migrations db if not exists
+
+        :param args: Creds for connect to database(s)
+        :type args: AuthArgs | URLArgs
+        :rtype: None
+        """
         if isinstance(args, AuthArgs):
             self.main_migrations_dsn_obj = PostgresDsn.build(
                 scheme="postgresql",
@@ -73,7 +83,12 @@ class PostgresMigrator:
         self.migration_name = args.migration_name
         self.__create_migrations_db()
 
-    def __create_migrations_db(self):
+    def __create_migrations_db(self) -> None:
+        """
+        Create migrations database if not exists
+
+        :rtype: None
+        """
         main_migrations_requester = PostgresRequester(self.main_migrations_dsn_obj)
         with main_migrations_requester.get_connection() as connection:
             with connection.cursor() as cursor:
@@ -126,6 +141,12 @@ class PostgresMigrator:
                 )
 
     def _extract_schema(self) -> dict:
+        """
+        Extract schema in specific format from target database
+
+        :return: Schema in specific format
+        :rtype: dict
+        """
         schema = {"tables": {}, "indexes": [], "foreign_keys": []}
 
         requester = PostgresRequester(self.target_dsn_obj)
@@ -217,6 +238,15 @@ class PostgresMigrator:
         return schema
 
     def _save_schema_diff(self, schema: dict, sql_request: str) -> None:
+        """
+        Add to migrations database new chain link with difference between last available shema and new version
+
+        :param schema: Database schema in specific format
+        :type schema: dict
+        :param sql_request: SQL script to make new schemas version from last available in migrations chain
+        :type sql_request: str
+        :rtype: None
+        """
         requester = PostgresRequester(self.migrations_dsn_obj)
         with requester.get_connection() as connection:
             with connection.cursor() as cursor:
@@ -238,6 +268,15 @@ class PostgresMigrator:
                 )
 
     def _schema_compare(self, schema: dict) -> CurrentSchema:
+        """
+        Compare current schema of target database with available in migrations database
+        Return name of chain group, current version in chain and max available version
+
+        :param schema: Current schema in specific format
+        :type schema: dict
+        :return: Name of chain group, current version in chain and max available version
+        :rtype: CurrentSchema
+        """
         requester = PostgresRequester(self.migrations_dsn_obj)
         with requester.get_connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
@@ -261,6 +300,16 @@ class PostgresMigrator:
                 return CurrentSchema(search_result['name'], search_result['step'], max_version)
 
     def _generate_map(self, current_version: int, max_version: int) -> list[str]:
+        """
+        Generate migration map - list of SQL scripts to migrate database between current and max version
+
+        :param current_version: Current database version
+        :type current_version: int
+        :param max_version: Max (or needed) database version
+        :type max_version: int
+        :return: List of SQL scripts for make migrations
+        :rtype: list[str]
+        """
         requester = PostgresRequester(self.migrations_dsn_obj)
         if current_version < max_version:
             with requester.get_connection() as connection:
@@ -285,10 +334,28 @@ class PostgresMigrator:
             return []
 
     def _get_migration_map_by_schema(self, schema: dict) -> list[str]:
+        """
+        Generate migration map by specified schema in specific format
+
+        :param schema: Schema in specific format
+        :type schema: dict
+        :return: List of SQL scripts for make migrations
+        :rtype: list[str]
+        """
         current_schema = self._schema_compare(schema)
         return self._generate_map(current_schema.current_version, current_schema.max_version)
 
     def _get_migration_map(self, start_version: int = 1, end_version: int | None = None) -> list[str]:
+        """
+        Generate migration map for target database, with specified start and end version
+
+        :param start_version: First version to start migration
+        :type start_version: int
+        :param end_version: End version to end migration, use lastest if specified like None
+        :type end_version: int | None
+        :return: List of SQL scripts for make migrations
+        :rtype: list[str]
+        """
         requester = PostgresRequester(self.migrations_dsn_obj)
         if end_version is None:
             with requester.get_connection() as connection:
@@ -304,6 +371,11 @@ class PostgresMigrator:
         return self._generate_map(start_version, end_version)
 
     def migrate_to_last_version(self) -> None:
+        """
+        Make migrations for target database to latest version, create database if not exists
+
+        :rtype: None
+        """
         main_target_requester = PostgresRequester(self.target_main_dsn_obj)
         with main_target_requester.get_connection() as connection:
             with connection.cursor() as cursor:
@@ -342,6 +414,14 @@ class PostgresMigrator:
                     cursor.execute(cast(LiteralString, migration))
 
     def create_migration(self) -> None:
+        """
+        Add migration in chain, add tag if specified, or use database name.
+        If no migrations for this chain group exists - create first script to create database, otherwise
+        find difference between last available version in chain and current instance of target database and add it to
+        migrations database
+
+        :rtype: None
+        """
         migrations_requester = PostgresRequester(self.migrations_dsn_obj)
         with migrations_requester.get_connection() as connection:
             with connection.cursor() as cursor:
@@ -420,7 +500,14 @@ class PostgresMigrator:
                     ).format(sql.Identifier(self.test_dsn_obj.path.lstrip('/')))
                 )
 
-    def save_migrations(self, file: str):
+    def save_migrations(self, file: str) -> None:
+        """
+        Save current migrations database to file
+
+        :param file: File name / path with name to save migrations database data
+        :type file: str
+        :rtype: None
+        """
         migrations_requester = PostgresRequester(self.migrations_dsn_obj)
         with migrations_requester.get_connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
@@ -433,7 +520,14 @@ class PostgresMigrator:
         with open(file, 'wb') as f:
             dump(all_schemas, f)
 
-    def load_migrations(self, file: str):
+    def load_migrations(self, file: str) -> None:
+        """
+        Load migrations database from file to migrations database
+
+        :param file: File name / path with name to load migrations database data
+        :type file: str
+        :rtype: None
+        """
         with open(file, 'rb') as f:
             data = load(f)
         migrations_requester = PostgresRequester(self.migrations_dsn_obj)

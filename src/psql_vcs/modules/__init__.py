@@ -1,3 +1,6 @@
+"""Contains core modules to create and execute migrations
+"""
+
 from .connector import PostgresRequester
 from .postgres_schema_processing import PostgresMigrator
 from .logger import setup_logger

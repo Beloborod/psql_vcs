@@ -1,3 +1,7 @@
+"""Core imports, define PostgresMigrator and needed types of arguments - AuthArgs and URLArgs.
+Also, setup logger.
+"""
+
 from .modules import setup_logger, PostgresMigrator
 from .models import AuthArgs, URLArgs
 
