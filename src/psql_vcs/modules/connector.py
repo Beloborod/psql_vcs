@@ -1,4 +1,4 @@
-"""Contains postgres connection wrapper"""
+"""Contains postgres connection wrapper."""
 
 from psycopg import connect, Connection, OperationalError
 from psycopg_pool import ConnectionPool
@@ -7,9 +7,8 @@ from pydantic import PostgresDsn
 
 class PostgresRequester:
     def __init__(self, database_url: str | PostgresDsn) -> None:
-        """
-        Initializes PostgresRequester with safely close all connections
-        and pools before exit of execution
+        """Initializes PostgresRequester with safely close all
+        connections and pools before exit of execution.
 
         :param database_url: URL string to connect to Postgres database
         :type database_url: str | PostgresDsn
@@ -33,8 +32,7 @@ class PostgresRequester:
         )
 
     def __del__(self) -> None:
-        """
-        Close all connections and pools before exit of execution
+        """Close all connections and pools before exit of execution.
 
         :rtype: None
         """
@@ -44,8 +42,7 @@ class PostgresRequester:
             self._no_trigger_pool.close()
 
     def __repr__(self) -> str:
-        """
-        Prevent write sensitive data in logs
+        """Prevent write sensitive data in logs.
 
         :return: Representation of class
         :rtype: str
@@ -57,8 +54,8 @@ class PostgresRequester:
         )
 
     def get_connection(self) -> Connection:
-        """
-        Get single connection to Postgres database from connection pool
+        """Get single connection to Postgres database from connection
+        pool.
 
         :return: Postgres connection from pool
         :rtype: Connection

@@ -1,6 +1,5 @@
-"""Contains Args classes, used for connect main Migrator class
-to databases
-"""
+"""Contains Args classes, used for connect main Migrator class to
+databases."""
 
 from ipaddress import IPv4Address
 from typing import Any
@@ -180,8 +179,7 @@ class AuthArgs(BaseModel):
             return self._target_server_main_database
 
     def __repr__(self) -> str:
-        """
-        Prevent write sensitive data in logs
+        """Prevent write sensitive data in logs.
 
         :return: Representation of class
         :rtype: str
@@ -329,8 +327,7 @@ class URLArgs(BaseModel):
             return self._target_server_main_database_url
 
     def __repr__(self) -> str:
-        """
-        Prevent write sensitive data in logs
+        """Prevent write sensitive data in logs.
 
         :return: Representation of class
         :rtype: str
