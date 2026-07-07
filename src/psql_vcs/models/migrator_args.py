@@ -8,20 +8,24 @@ from pydantic import PostgresDsn, BaseModel, field_validator, ValidationError
 
 
 class AuthArgs(BaseModel):
-    def __init__(self, target_database: str,
-                 target_server_host: str | IPv4Address,
-                 target_server_port: int,
-                 target_server_username: str,
-                 target_server_password: str,
-                 target_server_main_database: str | None = None,
-                 migration_server_host: str | IPv4Address | None = None,
-                 migration_server_port: int | None = None,
-                 migration_server_username: str | None = None,
-                 migration_server_password: str | None = None,
-                 migration_server_main_database: str | None = None,
-                 migration_server_migrations_database: str | None = None,
-                 migration_server_test_database: str | None = None,
-                 migration_name: str | None = None, **data: Any) -> None:
+    def __init__(
+        self,
+        target_database: str,
+        target_server_host: str | IPv4Address,
+        target_server_port: int,
+        target_server_username: str,
+        target_server_password: str,
+        target_server_main_database: str | None = None,
+        migration_server_host: str | IPv4Address | None = None,
+        migration_server_port: int | None = None,
+        migration_server_username: str | None = None,
+        migration_server_password: str | None = None,
+        migration_server_main_database: str | None = None,
+        migration_server_migrations_database: str | None = None,
+        migration_server_test_database: str | None = None,
+        migration_name: str | None = None,
+        **data: Any,
+    ) -> None:
         """
         Describe Authorize arguments to connect
 
@@ -89,17 +93,16 @@ class AuthArgs(BaseModel):
         self._migration_server_port = migration_server_port
         self._migration_server_username = migration_server_username
         self._migration_server_password = migration_server_password
-        self._migration_server_main_database = (
-            migration_server_main_database)
+        self._migration_server_main_database = migration_server_main_database
         self._migration_server_migrations_database = (
-            migration_server_migrations_database)
-        self._migration_server_test_database = (
-            migration_server_test_database)
+            migration_server_migrations_database
+        )
+        self._migration_server_test_database = migration_server_test_database
         self._migration_name = migration_name
 
     @field_validator(
-        '_target_server_host',
-        '_migration_server_host',
+        "_target_server_host",
+        "_migration_server_host",
     )
     @classmethod
     def _validate_host(cls, v: str | IPv4Address) -> str:
@@ -151,28 +154,28 @@ class AuthArgs(BaseModel):
     @property
     def migration_server_main_database(self) -> str:
         if self._migration_server_main_database is None:
-            return 'postgres'
+            return "postgres"
         else:
             return self._migration_server_main_database
 
     @property
     def migration_server_migrations_database(self) -> str:
         if self._migration_server_migrations_database is None:
-            return 'psql_vcs_migrations_db'
+            return "psql_vcs_migrations_db"
         else:
             return self._migration_server_migrations_database
 
     @property
     def migration_server_test_database(self) -> str:
         if self._migration_server_test_database is None:
-            return 'psql_vcs_test_db'
+            return "psql_vcs_test_db"
         else:
             return self._migration_server_test_database
 
     @property
     def target_server_main_database(self) -> str:
         if self._target_server_main_database is None:
-            return 'postgres'
+            return "postgres"
         else:
             return self._target_server_main_database
 
@@ -183,17 +186,20 @@ class AuthArgs(BaseModel):
         :return: Representation of class
         :rtype: str
         """
-        return f'<AuthArgs {id(self)}>'
+        return f"<AuthArgs {id(self)}>"
 
 
 class URLArgs(BaseModel):
-    def __init__(self, target_database_url: str,
-                 migrations_database_url: str | None = None,
-                 migrations_main_database_url: str | None = None,
-                 migration_server_test_database: str | None = None,
-                 target_server_main_database_url: str | None = None,
-                 migration_name: str | None = None,
-                 **data: Any) -> None:
+    def __init__(
+        self,
+        target_database_url: str,
+        migrations_database_url: str | None = None,
+        migrations_main_database_url: str | None = None,
+        migration_server_test_database: str | None = None,
+        target_server_main_database_url: str | None = None,
+        migration_name: str | None = None,
+        **data: Any,
+    ) -> None:
         """
         Describe URL arguments to connect
 
@@ -229,16 +235,17 @@ class URLArgs(BaseModel):
         self._target_server_main_database_url = target_server_main_database_url
         self._migration_name = migration_name
 
-    @field_validator('_target_database_url',
-                     '_migrations_database_url',
-                     '_migrations_main_database_url',
-                     '_target_server_test_database'
-                     )
+    @field_validator(
+        "_target_database_url",
+        "_migrations_database_url",
+        "_migrations_main_database_url",
+        "_target_server_test_database",
+    )
     @classmethod
     def _validate_pg_url(cls, v: str) -> str:
         dsn = PostgresDsn(v)
         if dsn.path is None:
-            raise ValidationError('Database name is required')
+            raise ValidationError("Database name is required")
         return v
 
     @property
@@ -265,13 +272,13 @@ class URLArgs(BaseModel):
     def target_database(self) -> str:
         path = self.dsn_target_database.path
         if path is None:
-            raise ValidationError('Database name is required')
+            raise ValidationError("Database name is required")
         return path
 
     @property
     def migration_name(self) -> str:
         if self._migration_name is None:
-            return self.target_database.lstrip('/')
+            return self.target_database.lstrip("/")
         else:
             return self._migration_name
 
@@ -279,9 +286,12 @@ class URLArgs(BaseModel):
     def migrations_test_database_url(self) -> str:
         return PostgresDsn(
             self._target_database_url.replace(
-                self.target_database, '/psql_vcs_test_db'
-                if self._migration_server_test_database is None
-                else '/' + self._migration_server_test_database
+                self.target_database,
+                (
+                    "/psql_vcs_test_db"
+                    if self._migration_server_test_database is None
+                    else "/" + self._migration_server_test_database
+                ),
             )
         ).encoded_string()
 
@@ -290,8 +300,7 @@ class URLArgs(BaseModel):
         if self._migrations_database_url is None:
             return PostgresDsn(
                 self._target_database_url.replace(
-                    self.target_database,
-                    '/psql_vcs_migrations_db'
+                    self.target_database, "/psql_vcs_migrations_db"
                 )
             ).encoded_string()
         else:
@@ -302,7 +311,7 @@ class URLArgs(BaseModel):
         if self._migrations_main_database_url is None:
             return PostgresDsn(
                 self._target_database_url.replace(
-                    self.target_database, '/postgres'
+                    self.target_database, "/postgres"
                 )
             ).encoded_string()
         else:
@@ -313,7 +322,7 @@ class URLArgs(BaseModel):
         if self._target_server_main_database_url is None:
             return PostgresDsn(
                 self._target_database_url.replace(
-                    self.target_database, '/postgres'
+                    self.target_database, "/postgres"
                 )
             ).encoded_string()
         else:
@@ -326,4 +335,4 @@ class URLArgs(BaseModel):
         :return: Representation of class
         :rtype: str
         """
-        return f'<URLArgs {id(self)}>'
+        return f"<URLArgs {id(self)}>"

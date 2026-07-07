@@ -1,5 +1,4 @@
-"""Setup logger used in lib
-"""
+"""Setup logger used in lib"""
 
 import logging
 

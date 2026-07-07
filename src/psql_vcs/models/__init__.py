@@ -1,12 +1,6 @@
-"""Contains models, used in project for typing
-"""
+"""Contains models, used in project for typing"""
 
 from .migrator_args import AuthArgs, URLArgs
 from .schemas import CurrentSchema
 
-
-__all__ = [
-    'AuthArgs',
-    'URLArgs',
-    'CurrentSchema',
-]
+__all__ = ["AuthArgs", "URLArgs", "CurrentSchema"]
