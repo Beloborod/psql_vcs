@@ -118,3 +118,27 @@ migrator.migrate_to_last_version()
 ```
 The method will compare the current target_base schema with the schemas stored in the migration list. If migration_name is passed, only the corresponding migrations will be compared.
 The corresponding SQL commands will then be executed to bring the database up to date.
+
+# Sync migrations between projects / servers
+If you can't connect to the server storing migrations from the target server where the migration is running (or vice versa), or if you want to separate the architecture of saving and running migrations, you can save the migration history to a file and restore it on the desired server.
+To do this, first save the migrations to a file:
+```python
+from psql_vcs import PostgresMigrator, URLArgs
+
+migrator = PostgresMigrator(URLArgs("..."))
+
+migrator.save_migrations('migrations.pkl')
+```
+Now you can transfer this file to the target server, sync it via the Git repository, etc.
+
+And restore the migrations on the target server for further use:
+```python
+from psql_vcs import PostgresMigrator, URLArgs
+
+migrator = PostgresMigrator(URLArgs("..."))
+
+migrator.load_migrations('migrations.pkl')
+```
+
+> [!INFO]
+> The load_migrations method, like the migrate_to_last_version method, allows you to call them constantly, for example, when starting a project, to bring the database up to date, and will not raise an exception if migrations have already been restored or the database has already been brought to the latest version.
