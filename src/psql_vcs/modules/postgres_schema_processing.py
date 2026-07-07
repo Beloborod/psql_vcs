@@ -163,15 +163,15 @@ class PostgresMigrator:
                                    character_maximum_length,
                                    numeric_precision, numeric_scale,
                                    datetime_precision, is_nullable,
-                                   column_default, ordinal_position 
-                                      FROM information_schema.columns 
+                                   column_default, ordinal_position
+                                      FROM information_schema.columns
                                       WHERE table_schema
                                           NOT IN (
                                                   'pg_catalog',
                                                   'information_schema'
-                                                ) 
+                                                )
                                         AND table_name NOT LIKE 'pg_%'
-                                      ORDER BY 
+                                      ORDER BY
                                           table_schema,
                                           table_name,
                                           ordinal_position;""")
@@ -209,14 +209,14 @@ class PostgresMigrator:
                     schema["tables"] = dict(tables)
 
                     cursor.execute("""SELECT schemaname, tablename,
-                                   indexname, indexdef 
+                                   indexname, indexdef
                                       FROM pg_indexes
-                                      WHERE schemaname NOT IN 
+                                      WHERE schemaname NOT IN
                                             (
                                              'pg_catalog',
                                              'information_schema'
                                                 )
-                                   ORDER BY 
+                                   ORDER BY
                                        schemaname,
                                        tablename,
                                        indexname;""")
