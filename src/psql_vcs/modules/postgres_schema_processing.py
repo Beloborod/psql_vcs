@@ -9,6 +9,7 @@ import results
 from pydantic import PostgresDsn
 from ..models import AuthArgs, URLArgs, CurrentSchema
 from . import PostgresRequester
+from pickle import dump, load
 
 
 logger = logging.getLogger(__name__)
@@ -70,7 +71,9 @@ class PostgresMigrator:
                 if isinstance(args.target_server_main_database_url, str) else args.target_server_main_database_url
 
         self.migration_name = args.migration_name
+        self.__create_migrations_db()
 
+    def __create_migrations_db(self):
         main_migrations_requester = PostgresRequester(self.main_migrations_dsn_obj)
         with main_migrations_requester.get_connection() as connection:
             with connection.cursor() as cursor:
@@ -121,8 +124,6 @@ class PostgresMigrator:
                         );
                     """
                 )
-
-
 
     def _extract_schema(self) -> dict:
         schema = {"tables": {}, "indexes": [], "foreign_keys": []}
@@ -419,3 +420,30 @@ class PostgresMigrator:
                     ).format(sql.Identifier(self.test_dsn_obj.path.lstrip('/')))
                 )
 
+    def save_migrations(self, file: str):
+        migrations_requester = PostgresRequester(self.migrations_dsn_obj)
+        with migrations_requester.get_connection() as connection:
+            with connection.cursor(row_factory=dict_row) as cursor:
+                cursor.execute(
+                    """
+                    SELECT * FROM migrations.schemas
+                    """
+                )
+                all_schemas = cursor.fetchall()
+        with open(file, 'wb') as f:
+            dump(all_schemas, f)
+
+    def load_migrations(self, file: str):
+        with open(file, 'rb') as f:
+            data = load(f)
+        migrations_requester = PostgresRequester(self.migrations_dsn_obj)
+        with migrations_requester.get_connection() as connection:
+            with connection.cursor(row_factory=dict_row) as cursor:
+                for schema in data:
+                    cursor.execute(
+                        """
+                        INSERT INTO migrations.schemas (id, name, step, schema, sql_request, created_at)
+                            VALUES (%s, %s, %s, %s, %s, %s)
+                        """, (schema['id'], schema['name'], schema['step'], Jsonb(schema['schema']),
+                              schema['sql_request'], schema['created_at'])
+                    )
