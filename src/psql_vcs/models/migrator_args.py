@@ -21,7 +21,7 @@ class AuthArgs:
         migration_server_main_database: str | None = None,
         migration_server_migrations_database: str | None = None,
         migration_server_test_database: str | None = None,
-        migration_name: str | None = None
+        migration_name: str | None = None,
     ) -> None:
         """
         Describe Authorize arguments to connect
@@ -219,16 +219,22 @@ class URLArgs:
         :type migration_name: str | None = None
         """
         self._target_database_url = self._validate_pg_url(target_database_url)
-        self._migrations_database_url = self._validate_pg_url(
-            migrations_database_url
-        ) if migrations_database_url else None
-        self._migrations_main_database_url = self._validate_pg_url(
-            migrations_main_database_url
-        ) if migrations_main_database_url else None
+        self._migrations_database_url = (
+            self._validate_pg_url(migrations_database_url)
+            if migrations_database_url
+            else None
+        )
+        self._migrations_main_database_url = (
+            self._validate_pg_url(migrations_main_database_url)
+            if migrations_main_database_url
+            else None
+        )
         self._migration_server_test_database = migration_server_test_database
-        self._target_server_main_database_url = self._validate_pg_url(
-            target_server_main_database_url
-        ) if target_server_main_database_url else None
+        self._target_server_main_database_url = (
+            self._validate_pg_url(target_server_main_database_url)
+            if target_server_main_database_url
+            else None
+        )
         self._migration_name = migration_name
 
     @staticmethod
