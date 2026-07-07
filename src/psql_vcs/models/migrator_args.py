@@ -84,9 +84,11 @@ class AuthArgs:
         self.target_server_username = target_server_username
         self.target_server_password = target_server_password
         self._target_server_main_database = target_server_main_database
-        self._migration_server_host = self._validate_host(
-            migration_server_host
-        ) if migration_server_host else None
+        self._migration_server_host = (
+            self._validate_host(migration_server_host)
+            if migration_server_host
+            else None
+        )
         self._migration_server_port = migration_server_port
         self._migration_server_username = migration_server_username
         self._migration_server_password = migration_server_password
