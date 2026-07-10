@@ -1,0 +1,6 @@
+autoupdate_schedule: weekly
+
+ci:
+  autofix_prs: true
+  autofix_commit_msg: "style: auto format"
+  skip: [mypy, pytest]
