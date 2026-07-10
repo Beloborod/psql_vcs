@@ -2,29 +2,39 @@ help:
 	@echo "Tasks in \033[1;32mpsql_vcs\033[0m:"
 	@cat Makefile
 
-prepare:
-	pip install mypy flake8 pytest bandit pydocstyle isort black
+VENV = .venv_makefile
+PYTHON = $(VENV)/bin/python
+PIP = $(VENV)/bin/pip
+ACTIVATE = . $(VENV)/bin/activate
+
+venv:
+	python3.13 -m venv $(VENV)
+
+prepare: venv
+	$(PIP) install mypy flake8 pytest bandit pydocstyle isort black[toml] docformatter[tomli]
 
 lint:
-	mypy src --ignore-missing-imports
-	flake8 src --ignore=$(shell cat .flakeignore)
+	$(ACTIVATE); mypy src --ignore-missing-imports
+	$(ACTIVATE); flake8 src --ignore=$(shell cat .flakeignore)
 
 format:
-	black src/ tests/
-	isort src/ tests/
+	$(ACTIVATE); docformatter src
+	$(ACTIVATE); docformatter tests
+	$(ACTIVATE); black src/ tests/
+	$(ACTIVATE); isort src/ tests/
 
 dev:
-	pip install -e .
+	$(PIP) install -e .
 
 test: dev
-	pytest --doctest-modules --junitxml=junit/test-results.xml
-	bandit -r src -f xml -o junit/security.xml || true
+	$(ACTIVATE); pytest --doctest-modules --junitxml=junit/test-results.xml
+	$(ACTIVATE); bandit -r src -f xml -o junit/security.xml || true
 
 build: clean
-	pip install wheel
-	python setup.py bdist_wheel
+	$(PIP) install wheel
+	$(PYTHON) setup.py bdist_wheel
 
 clean:
 	@rm -rf .pytest_cache/ .mypy_cache/ junit/ build/ dist/
-	@find . -not -path './.venv*' -path '*/__pycache__*' -delete
-	@find . -not -path './.venv*' -path '*/*.egg-info*' -delete
+	@find . \( -path './.venv' -o -path $(VENV) \) -prune -o -type d -name '__pycache__' -delete
+	@find . \( -path './.venv' -o -path $(VENV) \) -prune -o -type d -name '*/*.egg-info*' -delete
