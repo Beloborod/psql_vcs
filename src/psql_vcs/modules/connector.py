@@ -13,7 +13,8 @@ from ..sql import TRY_CONNECTION
 
 class PostgresRequester:
     def __init__(self, database_url: str | PostgresDsn) -> None:
-        """Initializes PostgresRequester with safely close all connections and
+        """
+        Initializes PostgresRequester with safely close all connections and
         pools before exit of execution.
 
         :param database_url: URL string to connect to Postgres database
@@ -35,7 +36,8 @@ class PostgresRequester:
         )
 
     def __repr__(self) -> str:
-        """Prevent write sensitive data in logs.
+        """
+        Prevent write sensitive data in logs.
 
         :return: Representation of class
         :rtype: str
@@ -47,14 +49,16 @@ class PostgresRequester:
         )
 
     def close(self) -> None:
-        """Closes connection to Postgres.
+        """
+        Closes connection to Postgres.
 
         :rtype: None
         """
         self._pool.close()
 
     def __enter__(self) -> "PostgresRequester":
-        """Context manager __enter__.
+        """
+        Context manager __enter__.
 
         :return: self
         :rtype: PostgresRequester
@@ -62,7 +66,8 @@ class PostgresRequester:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Context manager __exit__.
+        """
+        Context manager __exit__.
 
         :param exc_type: Exception type
         :param exc_val: Exception value
@@ -73,7 +78,8 @@ class PostgresRequester:
 
     @contextmanager
     def connection(self) -> Iterator[Connection]:
-        """Context manager connection to Postgres.
+        """
+        Context manager connection to Postgres.
 
         :rtype: Iterator[Connection]
         """
@@ -87,7 +93,8 @@ class PostgresRequester:
         *,
         row_factory: RowFactory = tuple_row,
     ) -> Iterator[Cursor]:
-        """Context manager cursor to Postgres.
+        """
+        Context manager cursor to Postgres.
 
         :param row_factory: RowFactory instance
         :type row_factory: RowFactory

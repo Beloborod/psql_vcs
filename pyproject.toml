@@ -34,9 +34,7 @@ classifiers = [
 line-length = 79
 target-version = ["py313"]
 
-[tool.docformatter]
-recursive = true
-in-place = true
-exclude = [
-    "src/psql_vcs/sql/",
-]
+pre-summary-newline = true
+
+[tool.isort]
+profile = "black"

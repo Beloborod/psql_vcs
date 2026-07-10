@@ -174,7 +174,8 @@ class AuthArgs:
             return self._target_server_main_database
 
     def __repr__(self) -> str:
-        """Prevent write sensitive data in logs.
+        """
+        Prevent write sensitive data in logs.
 
         :return: Representation of class
         :rtype: str
@@ -323,7 +324,8 @@ class URLArgs:
             return self._target_server_main_database_url
 
     def __repr__(self) -> str:
-        """Prevent write sensitive data in logs.
+        """
+        Prevent write sensitive data in logs.
 
         :return: Representation of class
         :rtype: str

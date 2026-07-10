@@ -1,13 +1,18 @@
 repos:
-  - repo: https://github.com/PyCQA/docformatter
-    rev: v1.7.8
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.21
     hooks:
-      - id: docformatter
+      - id: ruff
+        args:
+          - --fix
 
   - repo: https://github.com/PyCQA/isort
     rev: 8.0.1
     hooks:
       - id: isort
+        args:
+          - --profile
+          - black
 
   - repo: https://github.com/psf/black
     rev: 26.5.1
