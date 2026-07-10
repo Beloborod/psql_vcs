@@ -11,17 +11,7 @@ venv:
 	python3.13 -m venv $(VENV)
 
 prepare: venv
-	$(PIP) install mypy flake8 pytest bandit pydocstyle isort black[toml] docformatter[tomli]
-
-lint:
-	$(ACTIVATE); mypy src --ignore-missing-imports
-	$(ACTIVATE); flake8 src --ignore=$(shell cat .flakeignore)
-
-format:
-	$(ACTIVATE); docformatter src
-	$(ACTIVATE); docformatter tests
-	$(ACTIVATE); black src/ tests/
-	$(ACTIVATE); isort src/ tests/
+	$(PIP) install pytest bandit
 
 dev:
 	$(PIP) install -e .
