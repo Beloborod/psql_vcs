@@ -1,4 +1,4 @@
-name: Lint
+name: Format
 
 on:
   pull_request:
@@ -15,7 +15,14 @@ jobs:
         with:
           python-version: "3.13"
 
-      - uses: pre-commit/action@v3.0.1
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run formatters
+        run: |
+          pre-commit run black --all-files || true
+          pre-commit run isort --all-files || true
+          pre-commit run docformatter --all-files || true
 
       - uses: stefanzweifel/git-auto-commit-action@v7
         with:
