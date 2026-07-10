@@ -158,3 +158,35 @@ migrator.load_migrations('migrations.pkl')
 
 > [!NOTE]
 > The load_migrations method, like the migrate_to_last_version method, allows you to call them constantly, for example, when starting a project, to bring the database up to date, and will not raise an exception if migrations have already been restored or the database has already been brought to the latest version.
+
+---
+
+## Contributing
+
+When working with a repository, set up a pre-commit to automatically generate code before submitting a pull request.
+
+``` bash
+pip install with pre-commit
+```
+
+You can use a Makefile to install test dependencies in .venv and run tests.
+
+First, install the dependencies:
+``` bash
+make prepare
+```
+
+Then you can run tests:
+``` bash
+make test
+```
+
+You can also install the current version of a package with change tracking in .venv:
+``` bash
+make develop
+```
+
+And a pre-built package:
+``` bash
+make build
+```
