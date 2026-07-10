@@ -15,6 +15,12 @@ from pydantic import PostgresDsn
 
 from ..models import AuthArgs, CurrentSchema, URLArgs
 from ..models.shcema_description import ForeignKeyInfo
+from ..sql import (CHECK_DATABASE, CREATE_DATABASE, CREATE_EXTENSION_UUID,
+                   CREATE_SCHEMA_MIGRATIONS, CREATE_TABLE_SCHEMAS,
+                   DISCONNECT_FROM_DB, DROP_DATABASE, FIND_MAP,
+                   FIND_MAX_VERSION, FIND_MIGRATION, FIND_MIGRATION_VERSION,
+                   INSERT_NEW_MIGRATION, LOAD_MIGRATION, SELECT_ALL_MIGRATIONS,
+                   SELECT_COLUMNS_INFO, SELECT_SCHEMAS_INFO, SELECT_TABLE_INFO)
 from . import PostgresRequester
 
 logger = logging.getLogger(__name__)
@@ -104,13 +110,7 @@ class PostgresMigrator:
         with main_migrations_requester.get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    """
-                    SELECT EXISTS (
-                        SELECT 1
-                        FROM pg_database
-                        WHERE datname = %s
-                    );
-                    """,
+                    CHECK_DATABASE,
                     (self._get_db_name(self.migrations_dsn_obj).lstrip("/"),),
                 )
                 exists = cursor.fetchone()
@@ -120,7 +120,7 @@ class PostgresMigrator:
                     raise PsycopgError("SQL request error")
                 if not exists:
                     cursor.execute(
-                        sql.SQL("""CREATE DATABASE {};""").format(
+                        sql.SQL(CREATE_DATABASE).format(
                             sql.Identifier(
                                 self._get_db_name(
                                     self.migrations_dsn_obj
@@ -132,21 +132,9 @@ class PostgresMigrator:
         requester = PostgresRequester(self.migrations_dsn_obj)
         with requester.get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("""CREATE SCHEMA IF NOT EXISTS
-                               migrations;""")
-                cursor.execute("""
-                               CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-                               """)
-                cursor.execute("""CREATE TABLE IF NOT EXISTS migrations.schemas
-                (
-                    id UUID PRIMARY KEY
-                    DEFAULT uuid_generate_v4(),
-                    name CHARACTER VARYING (40) NOT NULL,
-                    step SMALLINT NOT NULL, schema JSONB NOT NULL UNIQUE,
-                    sql_request CHARACTER VARYING NOT NULL,
-                    created_at TIMESTAMPTZ DEFAULT NOW()
-                );
-                               """)
+                cursor.execute(CREATE_SCHEMA_MIGRATIONS)
+                cursor.execute(CREATE_EXTENSION_UUID)
+                cursor.execute(CREATE_TABLE_SCHEMAS)
 
     def _extract_schema(self) -> dict:
         """Extract schema in specific format from target database.
@@ -161,23 +149,7 @@ class PostgresMigrator:
         try:
             with requester.get_connection() as connection:
                 with connection.cursor() as cursor:
-                    cursor.execute("""SELECT table_schema, table_name,
-                                   column_name, data_type,
-                                   character_maximum_length,
-                                   numeric_precision, numeric_scale,
-                                   datetime_precision, is_nullable,
-                                   column_default, ordinal_position
-                                      FROM information_schema.columns
-                                      WHERE table_schema
-                                          NOT IN (
-                                                  'pg_catalog',
-                                                  'information_schema'
-                                                )
-                                        AND table_name NOT LIKE 'pg_%'
-                                      ORDER BY
-                                          table_schema,
-                                          table_name,
-                                          ordinal_position;""")
+                    cursor.execute(SELECT_COLUMNS_INFO)
                     tables = defaultdict(list)
                     for (
                         sch,
@@ -211,18 +183,7 @@ class PostgresMigrator:
                         )
                     schema["tables"] = dict(tables)
 
-                    cursor.execute("""SELECT schemaname, tablename,
-                                   indexname, indexdef
-                                      FROM pg_indexes
-                                      WHERE schemaname NOT IN
-                                            (
-                                             'pg_catalog',
-                                             'information_schema'
-                                                )
-                                   ORDER BY
-                                       schemaname,
-                                       tablename,
-                                       indexname;""")
+                    cursor.execute(SELECT_SCHEMAS_INFO)
                     for sch, tbl, idx_name, idx_def in cursor.fetchall():
                         clean_def = " ".join(idx_def.split()).replace(
                             "public.", ""
@@ -235,29 +196,7 @@ class PostgresMigrator:
                             }
                         )
 
-                    cursor.execute("""
-                        SELECT
-                            tc.table_schema, tc.table_name, tc.constraint_name,
-                            kcu.column_name,
-                            ccu.table_schema AS fk_schema,
-                            ccu.table_name AS fk_table,
-                            ccu.column_name AS fk_column,
-                            pc.confdeltype as pc_del_type,
-                            pc.confupdtype as pc_upd_type
-                        FROM information_schema.table_constraints tc
-                        JOIN information_schema.key_column_usage kcu
-                          ON tc.constraint_name = kcu.constraint_name
-                         AND tc.table_schema = kcu.table_schema
-                        JOIN information_schema.constraint_column_usage ccu
-                          ON ccu.constraint_name = tc.constraint_name
-                        JOIN pg_constraint pc
-                          ON pc.conname = tc.constraint_name
-                        WHERE tc.constraint_type = 'FOREIGN KEY'
-                            AND tc.table_schema NOT IN
-                                ('pg_catalog', 'information_schema')
-                        ORDER BY tc.table_schema, tc.table_name,
-                                 tc.constraint_name, kcu.ordinal_position;
-                    """)
+                    cursor.execute(SELECT_TABLE_INFO)
                     fks: defaultdict[str, ForeignKeyInfo] = defaultdict(
                         ForeignKeyInfo
                     )
@@ -299,21 +238,7 @@ class PostgresMigrator:
         with requester.get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    """
-                    INSERT INTO migrations.schemas
-                        (name, step, schema, sql_request)
-                        VALUES
-                            (
-                                %s,
-                                (
-                                    SELECT COALESCE(MAX(step), -1) + 1
-                                    FROM migrations.schemas
-                                    WHERE name = %s
-                                ),
-                                %s,
-                                %s
-                            );
-                    """,
+                    INSERT_NEW_MIGRATION,
                     (
                         self.migration_name,
                         self.migration_name,
@@ -337,10 +262,7 @@ class PostgresMigrator:
         with requester.get_connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
-                    """
-                    SELECT name, step FROM migrations.schemas
-                        WHERE schema = %s;
-                    """,
+                    FIND_MIGRATION,
                     (Jsonb(schema),),
                 )
                 search_result = cursor.fetchone()
@@ -348,10 +270,7 @@ class PostgresMigrator:
                     raise RuntimeError("Scheme not found")
 
                 cursor.execute(
-                    """
-                    SELECT MAX(step) as max_version FROM migrations.schemas
-                        WHERE name = %s;
-                    """,
+                    FIND_MAX_VERSION,
                     (search_result["name"],),
                 )
                 result = cursor.fetchone()
@@ -381,14 +300,7 @@ class PostgresMigrator:
             with requester.get_connection() as connection:
                 with connection.cursor(row_factory=dict_row) as cursor:
                     cursor.execute(
-                        """
-                        SELECT step, sql_request
-                        FROM migrations.schemas
-                        WHERE name = %s
-                          AND step > %s
-                            AND step <= %s
-                        ORDER BY step;
-                        """,
+                        FIND_MAP,
                         (self.migration_name, current_version, max_version),
                     )
                     search_result = cursor.fetchall()
@@ -439,16 +351,13 @@ class PostgresMigrator:
             with requester.get_connection() as connection:
                 with connection.cursor(row_factory=dict_row) as cursor:
                     cursor.execute(
-                        """
-                        SELECT MAX(step) as max_step FROM migrations.schemas
-                            WHERE name = %s;
-                        """,
+                        FIND_MAX_VERSION,
                         (self.migration_name,),
                     )
                     search_result = cursor.fetchone()
                     if not search_result:
                         raise RuntimeError("Schema not found")
-                    end_version = search_result["max_step"]
+                    end_version = search_result["max_version"]
         return self._generate_map(start_version, end_version)
 
     def migrate_to_last_version(self) -> None:
@@ -461,15 +370,15 @@ class PostgresMigrator:
         with main_target_requester.get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    """
-                    SELECT 1
-                    FROM pg_database
-                    WHERE datname = %s;
-                    """,
+                    CHECK_DATABASE,
                     (self._get_db_name(self.target_dsn_obj).lstrip("/"),),
                 )
-                a = cursor.fetchone()
-                if a is None:
+                exists = cursor.fetchone()
+                if exists:
+                    exists = exists[0]
+                else:
+                    raise PsycopgError("SQL request error")
+                if not exists:
                     initial_sql = self._get_migration_map(
                         start_version=-1, end_version=0
                     )
@@ -481,7 +390,7 @@ class PostgresMigrator:
                             f"find initial schema"
                         )
                     cursor.execute(
-                        sql.SQL("""CREATE DATABASE {};""").format(
+                        sql.SQL(CREATE_DATABASE).format(
                             sql.Identifier(
                                 self._get_db_name(self.target_dsn_obj).lstrip(
                                     "/"
@@ -520,14 +429,7 @@ class PostgresMigrator:
         with migrations_requester.get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    """
-                    SELECT EXISTS (
-                        SELECT 1
-                        FROM migrations.schemas
-                        WHERE name = %s
-                          AND step = %s
-                    );
-                    """,
+                    FIND_MIGRATION_VERSION,
                     (self.migration_name, 0),
                 )
                 exists = cursor.fetchone()
@@ -542,23 +444,18 @@ class PostgresMigrator:
         with main_database_requester.get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    """
-                    SELECT pg_terminate_backend(pid)
-                    FROM pg_stat_activity
-                    WHERE datname = %s
-                      AND pid <> pg_backend_pid();
-                    """,
+                    DISCONNECT_FROM_DB,
                     (self._get_db_name(self.test_dsn_obj).lstrip("/"),),
                 )
                 cursor.execute(
-                    sql.SQL("""DROP DATABASE IF EXISTS {};""").format(
+                    sql.SQL(DROP_DATABASE).format(
                         sql.Identifier(
                             self._get_db_name(self.test_dsn_obj).lstrip("/")
                         )
                     )
                 )
                 cursor.execute(
-                    sql.SQL("""CREATE DATABASE {};""").format(
+                    sql.SQL(CREATE_DATABASE).format(
                         sql.Identifier(
                             self._get_db_name(self.test_dsn_obj).lstrip("/")
                         )
@@ -587,16 +484,11 @@ class PostgresMigrator:
         with main_database_requester.get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    """
-                    SELECT pg_terminate_backend(pid)
-                    FROM pg_stat_activity
-                    WHERE datname = %s
-                      AND pid <> pg_backend_pid();
-                    """,
+                    DISCONNECT_FROM_DB,
                     (self._get_db_name(self.test_dsn_obj).lstrip("/"),),
                 )
                 cursor.execute(
-                    sql.SQL("""DROP DATABASE IF EXISTS {};""").format(
+                    sql.SQL(DROP_DATABASE).format(
                         sql.Identifier(
                             self._get_db_name(self.test_dsn_obj).lstrip("/")
                         )
@@ -614,7 +506,7 @@ class PostgresMigrator:
         migrations_requester = PostgresRequester(self.migrations_dsn_obj)
         with migrations_requester.get_connection() as connection:
             with connection.cursor(row_factory=dict_row) as cursor:
-                cursor.execute("""SELECT * FROM migrations.schemas;""")
+                cursor.execute(SELECT_ALL_MIGRATIONS)
                 all_schemas = cursor.fetchall()
         with open(file, "wb") as f:
             dump(all_schemas, f)
@@ -634,10 +526,7 @@ class PostgresMigrator:
             with connection.cursor(row_factory=dict_row) as cursor:
                 for schema in data:
                     cursor.execute(
-                        """INSERT INTO migrations.schemas
-                           (id, name, step, schema, sql_request, created_at)
-                           VALUES (%s, %s, %s, %s, %s, %s)
-                               ON CONFLICT DO NOTHING""",
+                        LOAD_MIGRATION,
                         (
                             schema["id"],
                             schema["name"],
