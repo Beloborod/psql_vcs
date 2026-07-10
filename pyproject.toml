@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "psql_vcs"
 description = "Postgres version control system"
-version = "0.2.1"
+version = "1.0.0a0"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [

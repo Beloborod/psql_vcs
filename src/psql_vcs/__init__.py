@@ -10,4 +10,4 @@ setup_logger()
 
 __all__ = ["PostgresMigrator", "AuthArgs", "URLArgs"]
 
-__version__ = "0.2.1"
+__version__ = "1.0.0a0"
