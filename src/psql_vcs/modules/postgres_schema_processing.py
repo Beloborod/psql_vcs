@@ -1,4 +1,4 @@
-"""Core project logic with PostgreSQL schema processing.
+"""Core project logic with PostgreSQL schema processing
 """
 
 import logging
