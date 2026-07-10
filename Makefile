@@ -2,7 +2,7 @@ help:
 	@echo "Tasks in \033[1;32mpsql_vcs\033[0m:"
 	@cat Makefile
 
-VENV = .venv_makefile
+VENV = .venv
 PYTHON = $(VENV)/bin/python
 PIP = $(VENV)/bin/pip
 ACTIVATE = . $(VENV)/bin/activate
