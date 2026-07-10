@@ -1,5 +1,4 @@
-"""Contains Args classes, used for connect main Migrator class to
-databases."""
+"""Contains Args classes, used for connect main Migrator class to databases."""
 
 from ipaddress import IPv4Address
 

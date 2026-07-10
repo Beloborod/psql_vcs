@@ -28,8 +28,7 @@ logger = logging.getLogger(__name__)
 
 class PostgresMigrator:
     def __init__(self, args: AuthArgs | URLArgs) -> None:
-        """Initialize Postgres Migrator, create migrations db if not
-        exists.
+        """Initialize Postgres Migrator, create migrations db if not exists.
 
         :param args: Creds for connect to database(s)
         :type args: AuthArgs | URLArgs
@@ -224,8 +223,8 @@ class PostgresMigrator:
         return schema
 
     def _save_schema_diff(self, schema: dict, sql_request: str) -> None:
-        """Add to migrations database new chain link with difference
-        between last available shema and new version.
+        """Add to migrations database new chain link with difference between
+        last available shema and new version.
 
         :param schema: Database schema in specific format
         :type schema: dict
@@ -249,8 +248,8 @@ class PostgresMigrator:
 
     def _schema_compare(self, schema: dict) -> CurrentSchema:
         """Compare current schema of target database with available in
-        migrations database Return name of chain group, current version
-        in chain and max available version.
+        migrations database Return name of chain group, current version in
+        chain and max available version.
 
         :param schema: Current schema in specific format
         :type schema: dict
@@ -319,8 +318,7 @@ class PostgresMigrator:
             return []
 
     def _get_migration_map_by_schema(self, schema: dict) -> list[str]:
-        """Generate migration map by specified schema in specific
-        format.
+        """Generate migration map by specified schema in specific format.
 
         :param schema: Schema in specific format
         :type schema: dict
@@ -335,8 +333,8 @@ class PostgresMigrator:
     def _get_migration_map(
         self, start_version: int = 1, end_version: int | None = None
     ) -> list[str]:
-        """Generate migration map for target database, with specified
-        start and end version.
+        """Generate migration map for target database, with specified start and
+        end version.
 
         :param start_version: First version to start migration
         :type start_version: int

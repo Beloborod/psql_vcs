@@ -7,8 +7,8 @@ from pydantic import PostgresDsn
 
 class PostgresRequester:
     def __init__(self, database_url: str | PostgresDsn) -> None:
-        """Initializes PostgresRequester with safely close all
-        connections and pools before exit of execution.
+        """Initializes PostgresRequester with safely close all connections and
+        pools before exit of execution.
 
         :param database_url: URL string to connect to Postgres database
         :type database_url: str | PostgresDsn
@@ -54,8 +54,7 @@ class PostgresRequester:
         )
 
     def get_connection(self) -> Connection:
-        """Get single connection to Postgres database from connection
-        pool.
+        """Get single connection to Postgres database from connection pool.
 
         :return: Postgres connection from pool
         :rtype: Connection
