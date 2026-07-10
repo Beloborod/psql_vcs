@@ -11,8 +11,8 @@ class CurrentSchema:
         :type name: str
         :param current_version: Current database schemas version
         :type current_version: int
-        :param max_version: Needed database schemas version
-        to migrate onto
+        :param max_version: Needed database schemas version to migrate
+            onto
         :type max_version: int
         :rtype: None
         """

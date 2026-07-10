@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=83.0.0"]
+requires = ["setuptools>=83.0.0", "pre-commit>=4.6.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -32,6 +32,7 @@ classifiers = [
 
 [tool.black]
 line-length = 79
+target-version = ["py313"]
 
 [tool.docformatter]
 recursive = true

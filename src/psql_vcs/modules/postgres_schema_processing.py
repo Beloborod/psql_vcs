@@ -15,12 +15,25 @@ from pydantic import PostgresDsn
 
 from ..models import AuthArgs, CurrentSchema, URLArgs
 from ..models.shcema_description import ForeignKeyInfo
-from ..sql import (CHECK_DATABASE, CREATE_DATABASE, CREATE_EXTENSION_UUID,
-                   CREATE_SCHEMA_MIGRATIONS, CREATE_TABLE_SCHEMAS,
-                   DISCONNECT_FROM_DB, DROP_DATABASE, FIND_MAP,
-                   FIND_MAX_VERSION, FIND_MIGRATION, FIND_MIGRATION_VERSION,
-                   INSERT_NEW_MIGRATION, LOAD_MIGRATION, SELECT_ALL_MIGRATIONS,
-                   SELECT_COLUMNS_INFO, SELECT_SCHEMAS_INFO, SELECT_TABLE_INFO)
+from ..sql import (
+    CHECK_DATABASE,
+    CREATE_DATABASE,
+    CREATE_EXTENSION_UUID,
+    CREATE_SCHEMA_MIGRATIONS,
+    CREATE_TABLE_SCHEMAS,
+    DISCONNECT_FROM_DB,
+    DROP_DATABASE,
+    FIND_MAP,
+    FIND_MAX_VERSION,
+    FIND_MIGRATION,
+    FIND_MIGRATION_VERSION,
+    INSERT_NEW_MIGRATION,
+    LOAD_MIGRATION,
+    SELECT_ALL_MIGRATIONS,
+    SELECT_COLUMNS_INFO,
+    SELECT_SCHEMAS_INFO,
+    SELECT_TABLE_INFO,
+)
 from . import PostgresRequester
 
 logger = logging.getLogger(__name__)
@@ -225,7 +238,7 @@ class PostgresMigrator:
         :param schema: Database schema in specific format
         :type schema: dict
         :param sql_request: SQL script to make new schemas version from
-        last available in migrations chain
+            last available in migrations chain
         :type sql_request: str
         :rtype: None
         """
@@ -248,8 +261,8 @@ class PostgresMigrator:
 
         :param schema: Current schema in specific format
         :type schema: dict
-        :return: Name of chain group, current version in chain and
-        max available version
+        :return: Name of chain group, current version in chain and max
+            available version
         :rtype: CurrentSchema
         """
         with PostgresRequester(self.migrations_dsn_obj) as requester:
@@ -331,8 +344,8 @@ class PostgresMigrator:
 
         :param start_version: First version to start migration
         :type start_version: int
-        :param end_version: End version to end migration,
-        use lastest if specified like None
+        :param end_version: End version to end migration, use lastest if
+            specified like None
         :type end_version: int | None
         :return: List of SQL scripts for make migrations
         :rtype: list[str]
@@ -488,8 +501,8 @@ class PostgresMigrator:
     def save_migrations(self, file: str) -> None:
         """Save current migrations database to file.
 
-        :param file: File name / path with name to save
-        migrations database data
+        :param file: File name / path with name to save migrations
+            database data
         :type file: str
         :rtype: None
         """
@@ -505,8 +518,8 @@ class PostgresMigrator:
     def load_migrations(self, file: str) -> None:
         """Load migrations database from file to migrations database.
 
-        :param file: File name / path with name to load
-        migrations database data
+        :param file: File name / path with name to load migrations
+            database data
         :type file: str
         :rtype: None
         """
