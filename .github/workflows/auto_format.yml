@@ -28,6 +28,11 @@ jobs:
           pre-commit run isort --all-files || true
           pre-commit run docformatter --all-files || true
 
+      - name: Get last commit message
+        id: last_commit
+        run: |
+          echo "message=$(git log -1 --pretty=%s)" >> "$GITHUB_OUTPUT"
+
       - uses: stefanzweifel/git-auto-commit-action@v7
         with:
-          commit_message: "style: auto format"
+          commit_message: "[AF] ${{ steps.last_commit.outputs.message }}"
