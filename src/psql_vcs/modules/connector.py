@@ -1,6 +1,6 @@
 """Contains postgres connection wrapper."""
 
-from psycopg import connect, Connection, OperationalError
+from psycopg import Connection, OperationalError, connect
 from psycopg_pool import ConnectionPool
 from pydantic import PostgresDsn
 

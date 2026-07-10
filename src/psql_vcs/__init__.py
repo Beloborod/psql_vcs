@@ -3,8 +3,8 @@
 Also, setup logger.
 """
 
-from .modules import setup_logger, PostgresMigrator
 from .models import AuthArgs, URLArgs
+from .modules import PostgresMigrator, setup_logger
 
 setup_logger()
 
