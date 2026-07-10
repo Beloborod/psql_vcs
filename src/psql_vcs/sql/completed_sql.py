@@ -1,12 +1,12 @@
 from typing import LiteralString
 
-CREATE_SCHEMA_MIGRATIONS: LiteralString = """CREATE SCHEMA IF NOT EXISTS 
+CREATE_SCHEMA_MIGRATIONS: LiteralString = """CREATE SCHEMA IF NOT EXISTS
 migrations;"""
 
-CREATE_EXTENSION_UUID: LiteralString = """CREATE EXTENSION IF NOT EXISTS 
+CREATE_EXTENSION_UUID: LiteralString = """CREATE EXTENSION IF NOT EXISTS
     "uuid-ossp";"""
 
-CREATE_TABLE_SCHEMAS: LiteralString = """CREATE TABLE IF NOT EXISTS 
+CREATE_TABLE_SCHEMAS: LiteralString = """CREATE TABLE IF NOT EXISTS
                                              migrations.schemas
                 (
                     id UUID PRIMARY KEY
