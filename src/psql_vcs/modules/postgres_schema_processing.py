@@ -89,7 +89,8 @@ class PostgresMigrator:
     @staticmethod
     def _get_db_name(dns_obj: PostgresDsn) -> str:
         path = dns_obj.path
-        assert path is not None
+        if path is None:
+            raise RuntimeError("Path is None")
         return path
 
     def __create_migrations_db(self) -> None:
