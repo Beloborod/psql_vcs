@@ -23,8 +23,7 @@ class AuthArgs:
         migration_server_test_database: str | None = None,
         migration_name: str | None = None,
     ) -> None:
-        """
-        Describe Authorize arguments to connect
+        """Describe Authorize arguments to connect.
 
         :param target_database: Database to get schema or make migrations
         :type target_database: str
@@ -175,7 +174,8 @@ class AuthArgs:
             return self._target_server_main_database
 
     def __repr__(self) -> str:
-        """Prevent write sensitive data in logs.
+        """
+        Prevent write sensitive data in logs.
 
         :return: Representation of class
         :rtype: str
@@ -193,31 +193,28 @@ class URLArgs:
         target_server_main_database_url: str | None = None,
         migration_name: str | None = None,
     ) -> None:
-        """
-        Describe URL arguments to connect
+        """Describe URL arguments to connect.
 
-        :param target_database_url: Database url to get schema or
-        make migrations
+        :param target_database_url: Database url to get schema or make
+            migrations
         :type target_database_url: str
-
-        :param migrations_database_url: Database url for database
-        with migrations
+        :param migrations_database_url: Database url for database with
+            migrations
         :type migrations_database_url: str | None = None
-
         :param migrations_main_database_url: Main database url of server
-        with migrations database to create migrations database if not exists
+            with migrations database to create migrations database if
+            not exists
         :type migrations_main_database_url: str | None = None
-
         :param migration_server_test_database: Database name to restore
-        migrations chain, to find diff with current target database schemas
+            migrations chain, to find diff with current target database
+            schemas
         :type migration_server_test_database: str | None = None
-
-        :param target_server_main_database_url: Main database url of server
-        with target database to create target database if not exists
+        :param target_server_main_database_url: Main database url of
+            server with target database to create target database if not
+            exists
         :type target_server_main_database_url: str | None = None
-
-
-        :param migration_name: Tag to specify grouped chain of migrations
+        :param migration_name: Tag to specify grouped chain of
+            migrations
         :type migration_name: str | None = None
         """
         self._target_database_url = self._validate_pg_url(target_database_url)
@@ -327,7 +324,8 @@ class URLArgs:
             return self._target_server_main_database_url
 
     def __repr__(self) -> str:
-        """Prevent write sensitive data in logs.
+        """
+        Prevent write sensitive data in logs.
 
         :return: Representation of class
         :rtype: str

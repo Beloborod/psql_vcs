@@ -15,12 +15,25 @@ from pydantic import PostgresDsn
 
 from ..models import AuthArgs, CurrentSchema, URLArgs
 from ..models.shcema_description import ForeignKeyInfo
-from ..sql import (CHECK_DATABASE, CREATE_DATABASE, CREATE_EXTENSION_UUID,
-                   CREATE_SCHEMA_MIGRATIONS, CREATE_TABLE_SCHEMAS,
-                   DISCONNECT_FROM_DB, DROP_DATABASE, FIND_MAP,
-                   FIND_MAX_VERSION, FIND_MIGRATION, FIND_MIGRATION_VERSION,
-                   INSERT_NEW_MIGRATION, LOAD_MIGRATION, SELECT_ALL_MIGRATIONS,
-                   SELECT_COLUMNS_INFO, SELECT_SCHEMAS_INFO, SELECT_TABLE_INFO)
+from ..sql import (
+    CHECK_DATABASE,
+    CREATE_DATABASE,
+    CREATE_EXTENSION_UUID,
+    CREATE_SCHEMA_MIGRATIONS,
+    CREATE_TABLE_SCHEMAS,
+    DISCONNECT_FROM_DB,
+    DROP_DATABASE,
+    FIND_MAP,
+    FIND_MAX_VERSION,
+    FIND_MIGRATION,
+    FIND_MIGRATION_VERSION,
+    INSERT_NEW_MIGRATION,
+    LOAD_MIGRATION,
+    SELECT_ALL_MIGRATIONS,
+    SELECT_COLUMNS_INFO,
+    SELECT_SCHEMAS_INFO,
+    SELECT_TABLE_INFO,
+)
 from . import PostgresRequester
 
 logger = logging.getLogger(__name__)
@@ -28,7 +41,8 @@ logger = logging.getLogger(__name__)
 
 class PostgresMigrator:
     def __init__(self, args: AuthArgs | URLArgs) -> None:
-        """Initialize Postgres Migrator, create migrations db if not exists.
+        """
+        Initialize Postgres Migrator, create migrations db if not exists.
 
         :param args: Creds for connect to database(s)
         :type args: AuthArgs | URLArgs
@@ -99,7 +113,8 @@ class PostgresMigrator:
         return path
 
     def __create_migrations_db(self) -> None:
-        """Create migrations database if not exists.
+        """
+        Create migrations database if not exists.
 
         :rtype: None
         """
@@ -134,7 +149,8 @@ class PostgresMigrator:
                 cursor.execute(CREATE_TABLE_SCHEMAS)
 
     def _extract_schema(self) -> dict:
-        """Extract schema in specific format from target database.
+        """
+        Extract schema in specific format from target database.
 
         :return: Schema in specific format
         :rtype: dict
@@ -219,13 +235,14 @@ class PostgresMigrator:
         return schema
 
     def _save_schema_diff(self, schema: dict, sql_request: str) -> None:
-        """Add to migrations database new chain link with difference between
-        last available shema and new version.
+        """
+        Add to migrations database new chain link with difference between last
+        available shema and new version.
 
         :param schema: Database schema in specific format
         :type schema: dict
         :param sql_request: SQL script to make new schemas version from
-        last available in migrations chain
+            last available in migrations chain
         :type sql_request: str
         :rtype: None
         """
@@ -242,14 +259,15 @@ class PostgresMigrator:
                 )
 
     def _schema_compare(self, schema: dict) -> CurrentSchema:
-        """Compare current schema of target database with available in
-        migrations database Return name of chain group, current version in
-        chain and max available version.
+        """
+        Compare current schema of target database with available in migrations
+        database Return name of chain group, current version in chain and max
+        available version.
 
         :param schema: Current schema in specific format
         :type schema: dict
-        :return: Name of chain group, current version in chain and
-        max available version
+        :return: Name of chain group, current version in chain and max
+            available version
         :rtype: CurrentSchema
         """
         with PostgresRequester(self.migrations_dsn_obj) as requester:
@@ -311,7 +329,8 @@ class PostgresMigrator:
             return []
 
     def _get_migration_map_by_schema(self, schema: dict) -> list[str]:
-        """Generate migration map by specified schema in specific format.
+        """
+        Generate migration map by specified schema in specific format.
 
         :param schema: Schema in specific format
         :type schema: dict
@@ -326,13 +345,14 @@ class PostgresMigrator:
     def _get_migration_map(
         self, start_version: int = 1, end_version: int | None = None
     ) -> list[str]:
-        """Generate migration map for target database, with specified start and
+        """
+        Generate migration map for target database, with specified start and
         end version.
 
         :param start_version: First version to start migration
         :type start_version: int
-        :param end_version: End version to end migration,
-        use lastest if specified like None
+        :param end_version: End version to end migration, use lastest if
+            specified like None
         :type end_version: int | None
         :return: List of SQL scripts for make migrations
         :rtype: list[str]
@@ -351,8 +371,9 @@ class PostgresMigrator:
         return self._generate_map(start_version, end_version)
 
     def migrate_to_last_version(self) -> None:
-        """Make migrations for target database to latest version, create
-        database if not exists.
+        """
+        Make migrations for target database to latest version, create database
+        if not exists.
 
         :rtype: None
         """
@@ -486,10 +507,11 @@ class PostgresMigrator:
                 )
 
     def save_migrations(self, file: str) -> None:
-        """Save current migrations database to file.
+        """
+        Save current migrations database to file.
 
-        :param file: File name / path with name to save
-        migrations database data
+        :param file: File name / path with name to save migrations
+            database data
         :type file: str
         :rtype: None
         """
@@ -503,10 +525,11 @@ class PostgresMigrator:
             dump(all_schemas, f, default=str)
 
     def load_migrations(self, file: str) -> None:
-        """Load migrations database from file to migrations database.
+        """
+        Load migrations database from file to migrations database.
 
-        :param file: File name / path with name to load
-        migrations database data
+        :param file: File name / path with name to load migrations
+            database data
         :type file: str
         :rtype: None
         """

@@ -4,7 +4,8 @@ import logging
 
 
 def setup_logger() -> None:
-    """Setup logger.
+    """
+    Setup logger.
 
     :rtype: None
     """
