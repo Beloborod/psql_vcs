@@ -10,6 +10,18 @@ The library allows for automatic change tracking, creation of SQL scripts for mi
 > Library based on [results](https://github.com/djrobstep/results), so generated SQL code for migration inherits problems that are or may be in this library
 ---
 
+- [Installation](#installation)
+- [Usage](#usage)
+  - [AuthArgs](#initialization-example-with-authargs)
+  - [URLArgs](#initialization-example-with-urlargs)
+  - [Additional](#additional)
+- [Create migrations](#create-migrations)
+- [Make migrations](#make-migrations)
+- [Sync migrations](#sync-migrations-between-projects--servers)
+- [Contributing](#contributing)
+
+---
+
 ## Installation
 ```
 pip install psql_vcs
