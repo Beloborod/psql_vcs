@@ -1,0 +1,20 @@
+name: On push actions
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+
+  lint_failed:
+    needs: lint
+    if: ${{ always() && needs.lint.result == 'failure' }}
+    uses: ./.github/workflows/auto_format.yml
+
+  lint_succeed:
+    needs: lint
+    if: ${{ always() && needs.lint.result == 'success' }}
+    uses: ./.github/workflows/tests.yml
