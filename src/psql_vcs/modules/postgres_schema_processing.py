@@ -15,12 +15,25 @@ from pydantic import PostgresDsn
 
 from ..models import AuthArgs, CurrentSchema, URLArgs
 from ..models.shcema_description import ForeignKeyInfo
-from ..sql import (CHECK_DATABASE, CREATE_DATABASE, CREATE_EXTENSION_UUID,
-                   CREATE_SCHEMA_MIGRATIONS, CREATE_TABLE_SCHEMAS,
-                   DISCONNECT_FROM_DB, DROP_DATABASE, FIND_MAP,
-                   FIND_MAX_VERSION, FIND_MIGRATION, FIND_MIGRATION_VERSION,
-                   INSERT_NEW_MIGRATION, LOAD_MIGRATION, SELECT_ALL_MIGRATIONS,
-                   SELECT_COLUMNS_INFO, SELECT_SCHEMAS_INFO, SELECT_TABLE_INFO)
+from ..sql import (
+    CHECK_DATABASE,
+    CREATE_DATABASE,
+    CREATE_EXTENSION_UUID,
+    CREATE_SCHEMA_MIGRATIONS,
+    CREATE_TABLE_SCHEMAS,
+    DISCONNECT_FROM_DB,
+    DROP_DATABASE,
+    FIND_MAP,
+    FIND_MAX_VERSION,
+    FIND_MIGRATION,
+    FIND_MIGRATION_VERSION,
+    INSERT_NEW_MIGRATION,
+    LOAD_MIGRATION,
+    SELECT_ALL_MIGRATIONS,
+    SELECT_COLUMNS_INFO,
+    SELECT_SCHEMAS_INFO,
+    SELECT_TABLE_INFO,
+)
 from . import PostgresRequester
 
 logger = logging.getLogger(__name__)
