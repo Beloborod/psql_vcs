@@ -1,26 +1,14 @@
 """Contains sql requests without variables."""
 
-from completed_sql import (
-    CREATE_EXTENSION_UUID,
-    CREATE_SCHEMA_MIGRATIONS,
-    CREATE_TABLE_SCHEMAS,
-    SELECT_ALL_MIGRATIONS,
-    SELECT_COLUMNS_INFO,
-    SELECT_SCHEMAS_INFO,
-    SELECT_TABLE_INFO,
-)
-from uncompleted_sql import (
-    CHECK_DATABASE,
-    CREATE_DATABASE,
-    DISCONNECT_FROM_DB,
-    DROP_DATABASE,
-    FIND_MAP,
-    FIND_MAX_VERSION,
-    FIND_MIGRATION,
-    FIND_MIGRATION_VERSION,
-    INSERT_NEW_MIGRATION,
-    LOAD_MIGRATION,
-)
+from completed_sql import (CREATE_EXTENSION_UUID, CREATE_SCHEMA_MIGRATIONS,
+                           CREATE_TABLE_SCHEMAS, SELECT_ALL_MIGRATIONS,
+                           SELECT_COLUMNS_INFO, SELECT_SCHEMAS_INFO,
+                           SELECT_TABLE_INFO)
+from uncompleted_sql import (CHECK_DATABASE, CREATE_DATABASE,
+                             DISCONNECT_FROM_DB, DROP_DATABASE, FIND_MAP,
+                             FIND_MAX_VERSION, FIND_MIGRATION,
+                             FIND_MIGRATION_VERSION, INSERT_NEW_MIGRATION,
+                             LOAD_MIGRATION)
 
 __all__ = [
     "CHECK_DATABASE",
