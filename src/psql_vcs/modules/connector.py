@@ -1,8 +1,14 @@
 """Contains postgres connection wrapper."""
 
-from psycopg import Connection, OperationalError, connect
+from collections.abc import Iterator
+from contextlib import contextmanager
+
+from psycopg import Connection, Cursor, OperationalError, connect
+from psycopg.rows import RowFactory, tuple_row
 from psycopg_pool import ConnectionPool
 from pydantic import PostgresDsn
+
+from ..sql import TRY_CONNECTION
 
 
 class PostgresRequester:
@@ -20,26 +26,13 @@ class PostgresRequester:
 
         try:
             with connect(self._dsn, connect_timeout=5) as conn:
-                conn.execute("SELECT 1")
+                conn.execute(TRY_CONNECTION)
         except OperationalError as e:
             raise RuntimeError(f"Failed to connect to database: {e}") from None
 
         self._pool = ConnectionPool(
             self._dsn, min_size=2, max_size=10, max_idle=300, max_lifetime=3600
         )
-        self._no_trigger_pool = ConnectionPool(
-            self._dsn, min_size=1, max_size=4, max_idle=300, max_lifetime=3600
-        )
-
-    def __del__(self) -> None:
-        """Close all connections and pools before exit of execution.
-
-        :rtype: None
-        """
-        if hasattr(self, "_pool"):
-            self._pool.close()
-        if hasattr(self, "_no_trigger_pool"):
-            self._no_trigger_pool.close()
 
     def __repr__(self) -> str:
         """Prevent write sensitive data in logs.
@@ -53,12 +46,54 @@ class PostgresRequester:
             f"password=***>"
         )
 
-    def get_connection(self) -> Connection:
-        """Get single connection to Postgres database from connection pool.
+    def close(self) -> None:
+        """Closes connection to Postgres.
 
-        :return: Postgres connection from pool
-        :rtype: Connection
+        :rtype: None
         """
-        connection = self._pool.getconn()
-        connection.autocommit = True
-        return connection
+        self._pool.close()
+
+    def __enter__(self) -> "PostgresRequester":
+        """Context manager __enter__.
+
+        :return: self
+        :rtype: PostgresRequester
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Context manager __exit__.
+
+        :param exc_type: Exception type
+        :param exc_val: Exception value
+        :param exc_tb: Exception traceback
+        :rtype: None
+        """
+        self.close()
+
+    @contextmanager
+    def connection(self) -> Iterator[Connection]:
+        """Context manager connection to Postgres.
+
+        :rtype: Iterator[Connection]
+        """
+        with self._pool.connection() as conn:
+            conn.autocommit = True
+            yield conn
+
+    @contextmanager
+    def cursor(
+        self,
+        *,
+        row_factory: RowFactory = tuple_row,
+    ) -> Iterator[Cursor]:
+        """Context manager cursor to Postgres.
+
+        :param row_factory: RowFactory instance
+        :type row_factory: RowFactory
+        :rtype: Iterator[Cursor]
+        """
+        with self._pool.connection() as conn:
+            conn.autocommit = True
+            with conn.cursor(row_factory=row_factory) as cursor:
+                yield cursor

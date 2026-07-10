@@ -74,3 +74,5 @@ SELECT_TABLE_INFO: LiteralString = """
                     """
 
 SELECT_ALL_MIGRATIONS: LiteralString = """SELECT * FROM migrations.schemas;"""
+
+TRY_CONNECTION: LiteralString = "SELECT 1"

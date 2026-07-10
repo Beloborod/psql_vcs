@@ -3,7 +3,7 @@
 import logging
 from collections import defaultdict
 from dataclasses import asdict
-from pickle import dump, load
+from json import dump, load
 from typing import LiteralString, cast
 
 import results
@@ -103,11 +103,10 @@ class PostgresMigrator:
 
         :rtype: None
         """
-        main_migrations_requester = PostgresRequester(
+        with PostgresRequester(
             self.main_migrations_dsn_obj
-        )
-        with main_migrations_requester.get_connection() as connection:
-            with connection.cursor() as cursor:
+        ) as main_migrations_requester:
+            with main_migrations_requester.cursor() as cursor:
                 cursor.execute(
                     CHECK_DATABASE,
                     (self._get_db_name(self.migrations_dsn_obj).lstrip("/"),),
@@ -128,9 +127,8 @@ class PostgresMigrator:
                         )
                     )
 
-        requester = PostgresRequester(self.migrations_dsn_obj)
-        with requester.get_connection() as connection:
-            with connection.cursor() as cursor:
+        with PostgresRequester(self.migrations_dsn_obj) as requester:
+            with requester.cursor() as cursor:
                 cursor.execute(CREATE_SCHEMA_MIGRATIONS)
                 cursor.execute(CREATE_EXTENSION_UUID)
                 cursor.execute(CREATE_TABLE_SCHEMAS)
@@ -143,11 +141,9 @@ class PostgresMigrator:
         """
         schema: dict = {"tables": {}, "indexes": [], "foreign_keys": []}
 
-        requester = PostgresRequester(self.target_dsn_obj)
-
         try:
-            with requester.get_connection() as connection:
-                with connection.cursor() as cursor:
+            with PostgresRequester(self.target_dsn_obj) as requester:
+                with requester.cursor() as cursor:
                     cursor.execute(SELECT_COLUMNS_INFO)
                     tables = defaultdict(list)
                     for (
@@ -233,9 +229,8 @@ class PostgresMigrator:
         :type sql_request: str
         :rtype: None
         """
-        requester = PostgresRequester(self.migrations_dsn_obj)
-        with requester.get_connection() as connection:
-            with connection.cursor() as cursor:
+        with PostgresRequester(self.migrations_dsn_obj) as requester:
+            with requester.cursor() as cursor:
                 cursor.execute(
                     INSERT_NEW_MIGRATION,
                     (
@@ -257,9 +252,8 @@ class PostgresMigrator:
         max available version
         :rtype: CurrentSchema
         """
-        requester = PostgresRequester(self.migrations_dsn_obj)
-        with requester.get_connection() as connection:
-            with connection.cursor(row_factory=dict_row) as cursor:
+        with PostgresRequester(self.migrations_dsn_obj) as requester:
+            with requester.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(
                     FIND_MIGRATION,
                     (Jsonb(schema),),
@@ -294,10 +288,9 @@ class PostgresMigrator:
         :return: List of SQL scripts for make migrations
         :rtype: list[str]
         """
-        requester = PostgresRequester(self.migrations_dsn_obj)
         if current_version < max_version:
-            with requester.get_connection() as connection:
-                with connection.cursor(row_factory=dict_row) as cursor:
+            with PostgresRequester(self.migrations_dsn_obj) as requester:
+                with requester.cursor(row_factory=dict_row) as cursor:
                     cursor.execute(
                         FIND_MAP,
                         (self.migration_name, current_version, max_version),
@@ -344,10 +337,9 @@ class PostgresMigrator:
         :return: List of SQL scripts for make migrations
         :rtype: list[str]
         """
-        requester = PostgresRequester(self.migrations_dsn_obj)
         if end_version is None:
-            with requester.get_connection() as connection:
-                with connection.cursor(row_factory=dict_row) as cursor:
+            with PostgresRequester(self.migrations_dsn_obj) as requester:
+                with requester.cursor(row_factory=dict_row) as cursor:
                     cursor.execute(
                         FIND_MAX_VERSION,
                         (self.migration_name,),
@@ -364,9 +356,10 @@ class PostgresMigrator:
 
         :rtype: None
         """
-        main_target_requester = PostgresRequester(self.target_main_dsn_obj)
-        with main_target_requester.get_connection() as connection:
-            with connection.cursor() as cursor:
+        with PostgresRequester(
+            self.target_main_dsn_obj
+        ) as main_target_requester:
+            with main_target_requester.cursor() as cursor:
                 cursor.execute(
                     CHECK_DATABASE,
                     (self._get_db_name(self.target_dsn_obj).lstrip("/"),),
@@ -396,11 +389,10 @@ class PostgresMigrator:
                             )
                         )
                     )
-                    target_requester = PostgresRequester(self.target_dsn_obj)
-                    with (
-                        target_requester.get_connection() as target_connection
-                    ):
-                        with target_connection.cursor() as target_cursor:
+                    with PostgresRequester(
+                        self.target_dsn_obj
+                    ) as target_requester:
+                        with target_requester.cursor() as target_cursor:
                             for migration in initial_sql:
                                 target_cursor.execute(
                                     cast(LiteralString, migration)
@@ -408,9 +400,8 @@ class PostgresMigrator:
 
         schema = self._extract_schema()
         migration_map = self._get_migration_map_by_schema(schema)
-        requester = PostgresRequester(self.target_dsn_obj)
-        with requester.get_connection() as connection:
-            with connection.cursor() as cursor:
+        with PostgresRequester(self.target_dsn_obj) as requester:
+            with requester.cursor() as cursor:
                 for migration in migration_map:
                     cursor.execute(cast(LiteralString, migration))
 
@@ -423,9 +414,10 @@ class PostgresMigrator:
 
         :rtype: None
         """
-        migrations_requester = PostgresRequester(self.migrations_dsn_obj)
-        with migrations_requester.get_connection() as connection:
-            with connection.cursor() as cursor:
+        with PostgresRequester(
+            self.migrations_dsn_obj
+        ) as migrations_requester:
+            with migrations_requester.cursor() as cursor:
                 cursor.execute(
                     FIND_MIGRATION_VERSION,
                     (self.migration_name, 0),
@@ -436,11 +428,10 @@ class PostgresMigrator:
                 else:
                     raise PsycopgError("SQL request error")
 
-        main_database_requester = PostgresRequester(
+        with PostgresRequester(
             self.main_migrations_dsn_obj
-        )
-        with main_database_requester.get_connection() as connection:
-            with connection.cursor() as cursor:
+        ) as main_database_requester:
+            with main_database_requester.cursor() as cursor:
                 cursor.execute(
                     DISCONNECT_FROM_DB,
                     (self._get_db_name(self.test_dsn_obj).lstrip("/"),),
@@ -459,12 +450,11 @@ class PostgresMigrator:
                         )
                     )
                 )
-        test_requester = PostgresRequester(self.test_dsn_obj)
 
         if exists:
             full_migration_chain = self._get_migration_map(-1)
-            with test_requester.get_connection() as connection:
-                with connection.cursor() as cursor:
+            with PostgresRequester(self.test_dsn_obj) as test_requester:
+                with test_requester.cursor() as cursor:
                     for migration in full_migration_chain:
                         cursor.execute(cast(LiteralString, migration))
 
@@ -479,8 +469,10 @@ class PostgresMigrator:
         else:
             logger.info("No changes made for %s", self.migration_name)
 
-        with main_database_requester.get_connection() as connection:
-            with connection.cursor() as cursor:
+        with PostgresRequester(
+            self.main_migrations_dsn_obj
+        ) as main_database_requester:
+            with main_database_requester.cursor() as cursor:
                 cursor.execute(
                     DISCONNECT_FROM_DB,
                     (self._get_db_name(self.test_dsn_obj).lstrip("/"),),
@@ -501,13 +493,14 @@ class PostgresMigrator:
         :type file: str
         :rtype: None
         """
-        migrations_requester = PostgresRequester(self.migrations_dsn_obj)
-        with migrations_requester.get_connection() as connection:
-            with connection.cursor(row_factory=dict_row) as cursor:
+        with PostgresRequester(
+            self.migrations_dsn_obj
+        ) as migrations_requester:
+            with migrations_requester.cursor(row_factory=dict_row) as cursor:
                 cursor.execute(SELECT_ALL_MIGRATIONS)
                 all_schemas = cursor.fetchall()
-        with open(file, "wb") as f:
-            dump(all_schemas, f)
+        with open(file, "w") as f:
+            dump(all_schemas, f, default=str)
 
     def load_migrations(self, file: str) -> None:
         """Load migrations database from file to migrations database.
@@ -517,11 +510,12 @@ class PostgresMigrator:
         :type file: str
         :rtype: None
         """
-        with open(file, "rb") as f:
+        with open(file, "r") as f:
             data = load(f)
-        migrations_requester = PostgresRequester(self.migrations_dsn_obj)
-        with migrations_requester.get_connection() as connection:
-            with connection.cursor(row_factory=dict_row) as cursor:
+        with PostgresRequester(
+            self.migrations_dsn_obj
+        ) as migrations_requester:
+            with migrations_requester.cursor(row_factory=dict_row) as cursor:
                 for schema in data:
                     cursor.execute(
                         LOAD_MIGRATION,
