@@ -1,0 +1,32 @@
+name: Auto format
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run formatters
+        run: |
+          pre-commit run black --all-files || true
+          pre-commit run isort --all-files || true
+          pre-commit run docformatter --all-files || true
+
+      - uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: "style: auto format"
