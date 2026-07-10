@@ -1,8 +1,7 @@
 name: Checks
 
 on:
-  pull_request:
-  push:
+  workflow_call:
 
 jobs:
   lint:
