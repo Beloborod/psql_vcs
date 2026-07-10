@@ -32,3 +32,10 @@ classifiers = [
 
 [tool.black]
 line-length = 79
+
+[tool.docformatter]
+recursive = true
+in-place = true
+exclude = [
+    "src/psql_vcs/sql/",
+]
